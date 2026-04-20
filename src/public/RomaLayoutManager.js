@@ -3,9 +3,10 @@ import wixWindow from 'wix-window';
 
 export class RomaLayoutManager {
     
-    constructor({ chatWidget, quizPanel, marginL, marginR }) {
+    constructor({ chatWidget, quizPanel, mentalMapPanel, marginL, marginR }) {
         this.chatWidget = chatWidget;
         this.quizPanel = quizPanel;
+        this.mentalMapPanel = mentalMapPanel; // NEW: Added mental map container
         this.marginL = marginL;
         this.marginR = marginR;
         this.isMobile = wixWindow.formFactor === "Mobile";
@@ -17,7 +18,7 @@ export class RomaLayoutManager {
             this.marginR.collapse();
         } else {
             // Restore state based on Editor visibility
-            if (this.quizPanel.collapsed) {
+            if (this.quizPanel.collapsed && (!this.mentalMapPanel || this.mentalMapPanel.collapsed)) {
                 this.marginL.expand();
                 this.marginR.expand();
             } else {
@@ -33,36 +34,58 @@ export class RomaLayoutManager {
             await Promise.all([
                 this.marginL.collapse(),
                 this.marginR.collapse(),
-                this.chatWidget.collapse()
+                this.chatWidget.collapse(),
+                this.mentalMapPanel ? this.mentalMapPanel.collapse() : Promise.resolve() // 🟢 Force Mental Map Close
             ]);
             await this.quizPanel.expand();
         } else {
             await Promise.all([
                 this.marginL.collapse(),
-                this.marginR.collapse()
+                this.marginR.collapse(),
+                this.mentalMapPanel ? this.mentalMapPanel.collapse() : Promise.resolve() // 🟢 Force Mental Map Close
             ]);
             await this.quizPanel.expand(); // Forces Quiz Open
         }
     }
 
-    // 🟢 Mode B: DOCUMENT OPEN (New Method)
-    // Collapses margins but ensures Quiz is HIDDEN so they don't overlap.
-    async setDocumentLayout() {
+    // 🟢 NEW Mode: MENTAL MAP OPEN
+    // Collapses margins and hides Quiz, opens Mental Map
+    async setMentalMapMode() {
         if (this.isMobile) {
-            // MOBILE: Hide Chat, Hide Quiz, Hide Margins
-            // (The DocViewer frame will take over screen space via Page Code)
             await Promise.all([
                 this.marginL.collapse(),
                 this.marginR.collapse(),
                 this.chatWidget.collapse(),
-                this.quizPanel.collapse() // 🟢 Force Quiz Close
+                this.quizPanel.collapse() // Force Quiz Close
             ]);
+            if (this.mentalMapPanel) await this.mentalMapPanel.expand();
         } else {
-            // DESKTOP: Hide Margins, Hide Quiz
             await Promise.all([
                 this.marginL.collapse(),
                 this.marginR.collapse(),
-                this.quizPanel.collapse() // 🟢 Force Quiz Close
+                this.quizPanel.collapse() // Force Quiz Close
+            ]);
+            if (this.mentalMapPanel) await this.mentalMapPanel.expand(); 
+        }
+    }
+
+    // Mode B: DOCUMENT OPEN 
+    // Collapses margins but ensures Quiz and Mental Map are HIDDEN so they don't overlap.
+    async setDocumentLayout() {
+        if (this.isMobile) {
+            await Promise.all([
+                this.marginL.collapse(),
+                this.marginR.collapse(),
+                this.chatWidget.collapse(),
+                this.quizPanel.collapse(), 
+                this.mentalMapPanel ? this.mentalMapPanel.collapse() : Promise.resolve()
+            ]);
+        } else {
+            await Promise.all([
+                this.marginL.collapse(),
+                this.marginR.collapse(),
+                this.quizPanel.collapse(), 
+                this.mentalMapPanel ? this.mentalMapPanel.collapse() : Promise.resolve()
             ]);
         }
     }
@@ -73,11 +96,15 @@ export class RomaLayoutManager {
             await Promise.all([
                 this.marginL.collapse(),
                 this.marginR.collapse(),
-                this.quizPanel.collapse()
+                this.quizPanel.collapse(),
+                this.mentalMapPanel ? this.mentalMapPanel.collapse() : Promise.resolve()
             ]);
             await this.chatWidget.expand();
         } else {
-            await this.quizPanel.collapse();
+            await Promise.all([
+                this.quizPanel.collapse(),
+                this.mentalMapPanel ? this.mentalMapPanel.collapse() : Promise.resolve()
+            ]);
             await Promise.all([
                 this.marginL.expand(),
                 this.marginR.expand()

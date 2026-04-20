@@ -9,9 +9,11 @@ $w.onReady(async function () {
     // 1. Get UI Elements
     const chatWidget = $w('#chatUi');
     const quizWidget = $w('#quizUi');
+    const mentalMapWidget = $w('#mentalMindUi'); // NEW
     
     // Containers
     const $quizWrapper = $w('#quizWrapper');
+    const $mentalMapWrapper = $w('#mentalMapWrapper'); // NEW
     const $docContainer = $w('#docViewerContainer');
     const $docFrame = $w('#docViewerFrame');
     
@@ -23,6 +25,7 @@ $w.onReady(async function () {
     layoutManager = new RomaLayoutManager({
         chatWidget: chatWidget, 
         quizPanel: $quizWrapper, 
+        mentalMapPanel: $mentalMapWrapper, // NEW
         marginL: $marginL,
         marginR: $marginR
     });
@@ -42,6 +45,18 @@ $w.onReady(async function () {
 
         // 2. Open Quiz Layout
         layoutManager.setDuoMode(); 
+    }
+
+    // NEW Scenario: Show Mental Map 
+    function activateMentalMapView() {
+        // 1. Force Close Document Viewer
+        if (!$docContainer.collapsed) {
+            $docContainer.collapse();
+            $docFrame.postMessage(""); 
+        }
+
+        // 2. Open Mental Map Layout
+        layoutManager.setMentalMapMode(); 
     }
 
     // Scenario B: Show Document 
@@ -80,6 +95,11 @@ $w.onReady(async function () {
             }
         });
 
+        // NEW: Mental Map Trigger
+        chatWidget.on('mentalMapMode', () => {
+            activateMentalMapView(); 
+        });
+
         // B. Data Trigger
         chatWidget.on('quizDataAvailable', (eventOrData) => {
             const quizPayload = eventOrData.data || eventOrData;
@@ -98,9 +118,7 @@ $w.onReady(async function () {
             }
         });
 
-        // ------------------------------------------------------------------
-        // NEW: Stream Trigger (Images)
-        // ------------------------------------------------------------------
+        // Stream Trigger (Images)
         chatWidget.on('quizStreamImage', (eventOrData) => {
             const chunkData = eventOrData.data || eventOrData;
             activateQuizView(); // Ensure the layout is open
@@ -145,6 +163,13 @@ $w.onReady(async function () {
             if (chatWidget && typeof chatWidget.sendHiddenMessage === 'function') {
                 chatWidget.sendHiddenMessage(contextText);
             } 
+        });
+    }
+
+    // NEW: Mental Map Close Binding
+    if (mentalMapWidget) {
+        mentalMapWidget.on('onCloseRequested', () => {
+            resetToSoloMode();
         });
     }
 });
