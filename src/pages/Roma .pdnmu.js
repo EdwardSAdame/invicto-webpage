@@ -95,17 +95,29 @@ $w.onReady(async function () {
             }
         });
 
-        // NEW: Mental Map Trigger
+        // NEW: Mental Map Status Trigger (Just opens the layout)
         chatWidget.on('mentalMapMode', () => {
             activateMentalMapView(); 
         });
 
-        // B. Data Trigger
+        // B. Data Trigger (Quiz)
         chatWidget.on('quizDataAvailable', (eventOrData) => {
             const quizPayload = eventOrData.data || eventOrData;
             activateQuizView(); 
             if (quizWidget && typeof quizWidget.renderQuiz === 'function') {
                 quizWidget.renderQuiz(quizPayload);
+            }
+        });
+
+        // ------------------------------------------------------------------
+        // 🟢 NEW: DATA TRIGGER (MIND MAP)
+        // Catches the JSON payload and pushes it into the Mind Map Widget
+        // ------------------------------------------------------------------
+        chatWidget.on('openMindMap', (eventOrData) => {
+            const mapPayload = eventOrData.data || eventOrData;
+            activateMentalMapView(); 
+            if (mentalMapWidget && typeof mentalMapWidget.renderMap === 'function') {
+                mentalMapWidget.renderMap(mapPayload);
             }
         });
 
