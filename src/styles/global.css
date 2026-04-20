@@ -1,0 +1,32 @@
+/* ---------------------------------------------------- */
+/* Final Wix Studio Semantic Dark Mode                  */
+/* ---------------------------------------------------- */
+
+@media (prefers-color-scheme: dark) {
+    :root, :host, .spxThemeOverride, .max-width-container, #root {
+      
+      /* --- 1. BACKGROUNDS (Light turning to Dark) --- */
+      /* Swaps your pure white backgrounds to Almost Black */
+      --wst-color-fill-background-primary: #0F0F10 !important; 
+      --wst-color-fill-base-1: #0F0F10 !important;
+      
+      /* Swaps your light gray secondary backgrounds to Very Dark Gray */
+      --wst-color-fill-background-secondary: #282A2C !important; 
+  
+  
+      /* --- 2. TEXT & HEADINGS (Dark turning to Light) --- */
+      /* Swaps your Almost Black text/titles to Pure White */
+      --wst-color-text-primary: #FFFFFF !important; 
+      --wst-color-title: #FFFFFF !important;
+      --wst-color-fill-base-2: #FFFFFF !important;
+      
+      /* Swaps your Dark Gray subtitles/secondary text to Light Gray */
+      --wst-color-text-secondary: #A6A6A6 !important; 
+      --wst-color-subtitle: #A6A6A6 !important;
+  
+  
+      /* --- 3. LINES & BORDERS --- */
+      /* Swaps dark divider lines to a visible medium gray */
+      --wst-color-line: #4F4F4F !important; 
+    }
+  }

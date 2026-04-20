@@ -1,0 +1,39 @@
+// 📦 Purpose: Triggers the "contact update" Wix Automation via its triggerId
+
+import { customTrigger } from "@wix/automations";
+import { Permissions, webMethod } from "wix-web-module";
+
+// 🆔 This ID is tied to the specific Wix Automation set up in Studio
+const CONTACT_UPDATE_TRIGGER_ID = "3132cd80-052c-4917-8ba8-751f2672b873";
+
+/**
+ * Triggers the Wix Automation configured for contact updates.
+ * Called programmatically from backend event hooks (e.g., contacts_onContactUpdated).
+ *
+ * @param {Object} payload - The data to send to the automation (typically the updated contact object)
+ * @returns {Promise<Object>} - Wix Automation trigger response
+ */
+export const runContactUpdate = webMethod(
+  Permissions.Anyone,
+  async (payload) => {
+    try {
+      const result = await customTrigger.runTrigger({
+        triggerId: CONTACT_UPDATE_TRIGGER_ID,
+        payload,
+      });
+
+      return {
+        success: true,
+        message: "Automation triggered successfully.",
+        data: result,
+      };
+    } catch (error) {
+      console.error("❌ Failed to run contact update automation:", error);
+      return {
+        success: false,
+        message: "Failed to trigger automation.",
+        error: error.message,
+      };
+    }
+  }
+);
