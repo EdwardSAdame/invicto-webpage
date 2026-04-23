@@ -9,11 +9,11 @@ $w.onReady(async function () {
     // 1. Get UI Elements
     const chatWidget = $w('#chatUi');
     const quizWidget = $w('#quizUi');
-    const mentalMapWidget = $w('#mentalMindUi'); // NEW
+    const mentalMapWidget = $w('#mentalMindUi'); 
     
     // Containers
     const $quizWrapper = $w('#quizWrapper');
-    const $mentalMapWrapper = $w('#mentalMapWrapper'); // NEW
+    const $mentalMapWrapper = $w('#mentalMapWrapper'); 
     const $docContainer = $w('#docViewerContainer');
     const $docFrame = $w('#docViewerFrame');
     
@@ -25,7 +25,7 @@ $w.onReady(async function () {
     layoutManager = new RomaLayoutManager({
         chatWidget: chatWidget, 
         quizPanel: $quizWrapper, 
-        mentalMapPanel: $mentalMapWrapper, // NEW
+        mentalMapPanel: $mentalMapWrapper, 
         marginL: $marginL,
         marginR: $marginR
     });
@@ -36,44 +36,28 @@ $w.onReady(async function () {
     
     // Scenario A: Show Quiz 
     function activateQuizView() {
-        
-        // 1. Force Close Document Viewer
         if (!$docContainer.collapsed) {
             $docContainer.collapse();
             $docFrame.postMessage(""); 
         }
-
-        // 2. Open Quiz Layout
         layoutManager.setDuoMode(); 
     }
 
-    // NEW Scenario: Show Mental Map 
+    // Scenario: Show Mental Map 
     function activateMentalMapView() {
-        // 1. Force Close Document Viewer
         if (!$docContainer.collapsed) {
             $docContainer.collapse();
             $docFrame.postMessage(""); 
         }
-
-        // 2. Open Mental Map Layout
         layoutManager.setMentalMapMode(); 
     }
 
     // Scenario B: Show Document 
     function activateDocumentView(url) {
-
-        // 1. Prepare Secure URL
         let secureUrl = url.startsWith('http') ? url : `https://${url}`;
-        
         secureUrl += "#toolbar=0&navpanes=0&scrollbar=0";
-
-        // 2. Send URL to HTML Component
         $docFrame.postMessage(secureUrl);
-
-        // 3. Open Container
         $docContainer.expand();
-
-        // 4. ADJUST LAYOUT
         layoutManager.setDocumentLayout();
     }
 
@@ -87,7 +71,6 @@ $w.onReady(async function () {
     // 3. Bind Event Listeners 
     if (chatWidget) {
         
-        // A. Quiz Trigger
         chatWidget.on('quizMode', () => {
             activateQuizView(); 
             if (quizWidget && typeof quizWidget.initQuizLoading === 'function') {
@@ -95,12 +78,10 @@ $w.onReady(async function () {
             }
         });
 
-        // NEW: Mental Map Status Trigger (Just opens the layout)
         chatWidget.on('mentalMapMode', () => {
             activateMentalMapView(); 
         });
 
-        // B. Data Trigger (Quiz)
         chatWidget.on('quizDataAvailable', (eventOrData) => {
             const quizPayload = eventOrData.data || eventOrData;
             activateQuizView(); 
@@ -109,10 +90,6 @@ $w.onReady(async function () {
             }
         });
 
-        // ------------------------------------------------------------------
-        // 🟢 NEW: DATA TRIGGER (MIND MAP)
-        // Catches the JSON payload and pushes it into the Mind Map Widget
-        // ------------------------------------------------------------------
         chatWidget.on('openMindMap', (eventOrData) => {
             const mapPayload = eventOrData.data || eventOrData;
             activateMentalMapView(); 
@@ -121,7 +98,6 @@ $w.onReady(async function () {
             }
         });
 
-        // C. Stream Trigger (Questions Text)
         chatWidget.on('quizStreamItem', (eventOrData) => {
             const chunkData = eventOrData.data || eventOrData;
             activateQuizView(); 
@@ -130,16 +106,14 @@ $w.onReady(async function () {
             }
         });
 
-        // Stream Trigger (Images)
         chatWidget.on('quizStreamImage', (eventOrData) => {
             const chunkData = eventOrData.data || eventOrData;
-            activateQuizView(); // Ensure the layout is open
+            activateQuizView(); 
             if (quizWidget && typeof quizWidget.streamImage === 'function') {
                 quizWidget.streamImage(chunkData);
             }
         });
 
-        // D. DOCUMENT VIEWER TRIGGER
         chatWidget.on('openDocument', (eventOrData) => {
             const pdfUrl = eventOrData.data || eventOrData;
             if (pdfUrl && typeof pdfUrl === 'string') {
@@ -148,7 +122,6 @@ $w.onReady(async function () {
         });
     }
 
-    // E. DOCUMENT VIEWER CLOSE BUTTON
     if ($w('#closeDocViewer')) {
         $w('#closeDocViewer').onClick(() => {
             resetToSoloMode();
@@ -156,12 +129,10 @@ $w.onReady(async function () {
     }
 
     if (quizWidget) {
-        // F. Quiz Close Request
         quizWidget.on('onCloseRequested', () => {
             resetToSoloMode();
         });
 
-        // G. Ghost Bridge
         quizWidget.on('postMessageToChat', (event) => {
             const promptText = event.data.text;
             if (chatWidget && typeof chatWidget.sendMessage === 'function') {
@@ -169,7 +140,6 @@ $w.onReady(async function () {
             }
         });
 
-        // H. HIDDEN CONTEXT BRIDGE 
         quizWidget.on('postHiddenMessageToChat', (event) => {
             const contextText = event.data.text;
             if (chatWidget && typeof chatWidget.sendHiddenMessage === 'function') {
@@ -178,10 +148,25 @@ $w.onReady(async function () {
         });
     }
 
-    // NEW: Mental Map Close Binding
     if (mentalMapWidget) {
         mentalMapWidget.on('onCloseRequested', () => {
             resetToSoloMode();
+        });
+
+        // ------------------------------------------------------------------
+        // 🟢 THE CLEAN BRIDGE: Connect Mind Map Clicks to the Chat Widget
+        // ------------------------------------------------------------------
+        mentalMapWidget.on('onNodeExplored', (event) => {
+            const clickedLabel = event.data.label;
+            if (!clickedLabel) return;
+
+            // Pass the label to the Chat Widget's new public function!
+            if (chatWidget && typeof chatWidget.exploreMindmapNode === 'function') {
+                chatWidget.exploreMindmapNode(clickedLabel);
+                
+                // Switch the layout back so the user sees the chat typing
+                resetToSoloMode(); 
+            }
         });
     }
 });
