@@ -1,4 +1,5 @@
 // PAGE CODE: /roma
+import wixWindow from 'wix-window'; // 🟢 NEW: Import wixWindow to check device type
 import { RomaLayoutManager } from 'public/RomaLayoutManager';
 
 /** @type {RomaLayoutManager} */
@@ -164,8 +165,11 @@ $w.onReady(async function () {
             if (chatWidget && typeof chatWidget.exploreMindmapNode === 'function') {
                 chatWidget.exploreMindmapNode(clickedLabel);
                 
-                // Switch the layout back so the user sees the chat typing
-                resetToSoloMode(); 
+                // 🟢 NEW LOGIC: Only collapse the map if on Mobile or Tablet
+                const deviceType = wixWindow.formFactor;
+                if (deviceType === "Mobile" || deviceType === "Tablet") {
+                    resetToSoloMode(); 
+                }
             }
         });
     }
