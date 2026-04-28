@@ -81,6 +81,10 @@ $w.onReady(async function () {
 
         chatWidget.on('mentalMapMode', () => {
             activateMentalMapView(); 
+            // 🟢 NEW: Instantly trigger the pulsing skeleton map!
+            if (mentalMapWidget && typeof mentalMapWidget.showLoading === 'function') {
+                mentalMapWidget.showLoading();
+            }
         });
 
         chatWidget.on('quizDataAvailable', (eventOrData) => {
@@ -90,6 +94,26 @@ $w.onReady(async function () {
                 quizWidget.renderQuiz(quizPayload);
             }
         });
+
+        // ------------------------------------------------------------------
+        // 🟢 NEW: MIND MAP STREAMING LISTENERS
+        // ------------------------------------------------------------------
+        chatWidget.on('mindMapStreamNode', (eventOrData) => {
+            const nodePayload = eventOrData.data || eventOrData;
+            activateMentalMapView(); 
+            if (mentalMapWidget && typeof mentalMapWidget.appendStreamedNode === 'function') {
+                mentalMapWidget.appendStreamedNode(nodePayload);
+            }
+        });
+
+        chatWidget.on('mindMapStreamEdge', (eventOrData) => {
+            const edgePayload = eventOrData.data || eventOrData;
+            activateMentalMapView(); 
+            if (mentalMapWidget && typeof mentalMapWidget.appendStreamedEdge === 'function') {
+                mentalMapWidget.appendStreamedEdge(edgePayload);
+            }
+        });
+        // ------------------------------------------------------------------
 
         chatWidget.on('openMindMap', (eventOrData) => {
             const mapPayload = eventOrData.data || eventOrData;
@@ -155,7 +179,7 @@ $w.onReady(async function () {
         });
 
         // ------------------------------------------------------------------
-        // 🟢 THE CLEAN BRIDGE: Connect Mind Map Clicks to the Chat Widget
+        // THE CLEAN BRIDGE: Connect Mind Map Clicks to the Chat Widget
         // ------------------------------------------------------------------
         mentalMapWidget.on('onNodeExplored', (event) => {
             const clickedLabel = event.data.label;
@@ -165,7 +189,7 @@ $w.onReady(async function () {
             if (chatWidget && typeof chatWidget.exploreMindmapNode === 'function') {
                 chatWidget.exploreMindmapNode(clickedLabel);
                 
-                // 🟢 NEW LOGIC: Only collapse the map if on Mobile or Tablet
+                // NEW LOGIC: Only collapse the map if on Mobile or Tablet
                 const deviceType = wixWindow.formFactor;
                 if (deviceType === "Mobile" || deviceType === "Tablet") {
                     resetToSoloMode(); 
