@@ -1,5 +1,5 @@
 // PAGE CODE: /roma
-import wixWindow from 'wix-window'; // 🟢 NEW: Import wixWindow to check device type
+import wixWindow from 'wix-window'; 
 import { RomaLayoutManager } from 'public/RomaLayoutManager';
 
 /** @type {RomaLayoutManager} */
@@ -7,22 +7,18 @@ let layoutManager;
 
 $w.onReady(async function () {
 
-    // 1. Get UI Elements
     const chatWidget = $w('#chatUi');
     const quizWidget = $w('#quizUi');
     const mentalMapWidget = $w('#mentalMindUi'); 
     
-    // Containers
     const $quizWrapper = $w('#quizWrapper');
     const $mentalMapWrapper = $w('#mentalMapWrapper'); 
     const $docContainer = $w('#docViewerContainer');
     const $docFrame = $w('#docViewerFrame');
     
-    // Margins
     const $marginL = $w('#marginL');
     const $marginR = $w('#marginR');
 
-    // 2. Initialize Layout Manager
     layoutManager = new RomaLayoutManager({
         chatWidget: chatWidget, 
         quizPanel: $quizWrapper, 
@@ -33,9 +29,6 @@ $w.onReady(async function () {
 
     layoutManager.init();
 
-    // HELPER: MUTUAL EXCLUSION LOGIC
-    
-    // Scenario A: Show Quiz 
     function activateQuizView() {
         if (!$docContainer.collapsed) {
             $docContainer.collapse();
@@ -44,7 +37,6 @@ $w.onReady(async function () {
         layoutManager.setDuoMode(); 
     }
 
-    // Scenario: Show Mental Map 
     function activateMentalMapView() {
         if (!$docContainer.collapsed) {
             $docContainer.collapse();
@@ -53,7 +45,6 @@ $w.onReady(async function () {
         layoutManager.setMentalMapMode(); 
     }
 
-    // Scenario B: Show Document 
     function activateDocumentView(url) {
         let secureUrl = url.startsWith('http') ? url : `https://${url}`;
         secureUrl += "#toolbar=0&navpanes=0&scrollbar=0";
@@ -62,16 +53,13 @@ $w.onReady(async function () {
         layoutManager.setDocumentLayout();
     }
 
-    // Scenario C: Close Everything
     function resetToSoloMode() {
         $docContainer.collapse();
         $docFrame.postMessage(""); 
         layoutManager.setSoloMode();
     }
 
-    // 3. Bind Event Listeners 
     if (chatWidget) {
-        
         chatWidget.on('quizMode', () => {
             activateQuizView(); 
             if (quizWidget && typeof quizWidget.initQuizLoading === 'function') {
@@ -79,12 +67,9 @@ $w.onReady(async function () {
             }
         });
 
+        // 🟢 REMOVED showLoading() trigger here. It just activates the view now.
         chatWidget.on('mentalMapMode', () => {
             activateMentalMapView(); 
-            // 🟢 NEW: Instantly trigger the pulsing skeleton map!
-            if (mentalMapWidget && typeof mentalMapWidget.showLoading === 'function') {
-                mentalMapWidget.showLoading();
-            }
         });
 
         chatWidget.on('quizDataAvailable', (eventOrData) => {
@@ -95,9 +80,6 @@ $w.onReady(async function () {
             }
         });
 
-        // ------------------------------------------------------------------
-        // 🟢 NEW: MIND MAP STREAMING LISTENERS
-        // ------------------------------------------------------------------
         chatWidget.on('mindMapStreamNode', (eventOrData) => {
             const nodePayload = eventOrData.data || eventOrData;
             activateMentalMapView(); 
@@ -113,7 +95,6 @@ $w.onReady(async function () {
                 mentalMapWidget.appendStreamedEdge(edgePayload);
             }
         });
-        // ------------------------------------------------------------------
 
         chatWidget.on('openMindMap', (eventOrData) => {
             const mapPayload = eventOrData.data || eventOrData;
@@ -178,18 +159,13 @@ $w.onReady(async function () {
             resetToSoloMode();
         });
 
-        // ------------------------------------------------------------------
-        // THE CLEAN BRIDGE: Connect Mind Map Clicks to the Chat Widget
-        // ------------------------------------------------------------------
         mentalMapWidget.on('onNodeExplored', (event) => {
             const clickedLabel = event.data.label;
             if (!clickedLabel) return;
 
-            // Pass the label to the Chat Widget's new public function!
             if (chatWidget && typeof chatWidget.exploreMindmapNode === 'function') {
                 chatWidget.exploreMindmapNode(clickedLabel);
                 
-                // NEW LOGIC: Only collapse the map if on Mobile or Tablet
                 const deviceType = wixWindow.formFactor;
                 if (deviceType === "Mobile" || deviceType === "Tablet") {
                     resetToSoloMode(); 
