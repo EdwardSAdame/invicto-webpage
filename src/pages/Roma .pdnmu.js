@@ -10,9 +10,12 @@ $w.onReady(async function () {
     const chatWidget = $w('#chatUi');
     const quizWidget = $w('#quizUi');
     const mentalMapWidget = $w('#mentalMindUi'); 
+    const flashcardsWidget = $w('#flashcardsUi'); // NEW: Reference for future flashcards widget
     
     const $quizWrapper = $w('#quizWrapper');
     const $mentalMapWrapper = $w('#mentalMapWrapper'); 
+    const $flashcardsWrapper = $w('#flashcardsWrapper'); // NEW: Added flashcards container reference
+    
     const $docContainer = $w('#docViewerContainer');
     const $docFrame = $w('#docViewerFrame');
     
@@ -23,6 +26,7 @@ $w.onReady(async function () {
         chatWidget: chatWidget, 
         quizPanel: $quizWrapper, 
         mentalMapPanel: $mentalMapWrapper, 
+        flashcardsPanel: $flashcardsWrapper, // NEW: Passed to layout manager
         marginL: $marginL,
         marginR: $marginR
     });
@@ -43,6 +47,15 @@ $w.onReady(async function () {
             $docFrame.postMessage(""); 
         }
         layoutManager.setMentalMapMode(); 
+    }
+
+    // NEW: Function to activate Flashcards view
+    function activateFlashcardsView() {
+        if (!$docContainer.collapsed) {
+            $docContainer.collapse();
+            $docFrame.postMessage(""); 
+        }
+        layoutManager.setFlashcardsMode(); 
     }
 
     function activateDocumentView(url) {
@@ -67,9 +80,13 @@ $w.onReady(async function () {
             }
         });
 
-        // 🟢 REMOVED showLoading() trigger here. It just activates the view now.
         chatWidget.on('mentalMapMode', () => {
             activateMentalMapView(); 
+        });
+
+        // NEW: Listen for flashcards intent from the chat widget
+        chatWidget.on('flashcardsMode', () => {
+            activateFlashcardsView(); 
         });
 
         chatWidget.on('quizDataAvailable', (eventOrData) => {
@@ -171,6 +188,13 @@ $w.onReady(async function () {
                     resetToSoloMode(); 
                 }
             }
+        });
+    }
+
+    // NEW: Listen for close requests from the future flashcards widget
+    if (flashcardsWidget) {
+        flashcardsWidget.on('onCloseRequested', () => {
+            resetToSoloMode();
         });
     }
 });
