@@ -51,6 +51,7 @@ $w.onReady(async function () {
 
     // NEW: Function to activate Flashcards view
     function activateFlashcardsView() {
+        console.log("[FLASHCARDS-DEBUG] 6. activateFlashcardsView() called. Asking layoutManager to set mode...");
         if (!$docContainer.collapsed) {
             $docContainer.collapse();
             $docFrame.postMessage(""); 
@@ -86,6 +87,7 @@ $w.onReady(async function () {
 
         // NEW: Listen for flashcards intent from the chat widget
         chatWidget.on('flashcardsMode', () => {
+            console.log("[FLASHCARDS-DEBUG] 5. Host Page (Roma) received 'flashcardsMode' event from Widget!");
             activateFlashcardsView(); 
         });
 

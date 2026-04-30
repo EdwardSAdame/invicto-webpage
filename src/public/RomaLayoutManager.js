@@ -6,7 +6,7 @@ export class RomaLayoutManager {
         this.chatWidget = chatWidget;
         this.quizPanel = quizPanel;
         this.mentalMapPanel = mentalMapPanel; 
-        this.flashcardsPanel = flashcardsPanel; // NEW: Added flashcards container
+        this.flashcardsPanel = flashcardsPanel;
         this.marginL = marginL;
         this.marginR = marginR;
         this.isMobile = wixWindow.formFactor === "Mobile";
@@ -17,7 +17,6 @@ export class RomaLayoutManager {
             this.marginL.collapse();
             this.marginR.collapse();
         } else {
-            // Restore state based on Editor visibility
             if (this.quizPanel.collapsed && 
                (!this.mentalMapPanel || this.mentalMapPanel.collapsed) && 
                (!this.flashcardsPanel || this.flashcardsPanel.collapsed)) {
@@ -30,7 +29,6 @@ export class RomaLayoutManager {
         }
     }
 
-    // Mode A: QUIZ OPEN (Duo Mode)
     async setDuoMode() {
         if (this.isMobile) {
             await Promise.all([
@@ -52,7 +50,6 @@ export class RomaLayoutManager {
         }
     }
 
-    // Mode: MENTAL MAP OPEN
     async setMentalMapMode() {
         if (this.isMobile) {
             await Promise.all([
@@ -74,7 +71,6 @@ export class RomaLayoutManager {
         }
     }
 
-    // NEW Mode: FLASHCARDS OPEN
     async setFlashcardsMode() {
         if (this.isMobile) {
             await Promise.all([
@@ -96,7 +92,6 @@ export class RomaLayoutManager {
         }
     }
 
-    // Mode B: DOCUMENT OPEN 
     async setDocumentLayout() {
         if (this.isMobile) {
             await Promise.all([
@@ -118,7 +113,6 @@ export class RomaLayoutManager {
         }
     }
 
-    // Mode C: SOLO CHAT
     async setSoloMode() {
         if (this.isMobile) {
             await Promise.all([
