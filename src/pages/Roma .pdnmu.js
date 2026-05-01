@@ -85,10 +85,19 @@ $w.onReady(async function () {
             activateMentalMapView(); 
         });
 
-        // NEW: Listen for flashcards intent from the chat widget
+        // Listen for flashcards intent from the chat widget
         chatWidget.on('flashcardsMode', () => {
             console.log("[FLASHCARDS-DEBUG] 5. Host Page (Roma) received 'flashcardsMode' event from Widget!");
             activateFlashcardsView(); 
+        });
+
+        // NEW: Intercept flashcards data and pass to the flashcards widget
+        chatWidget.on('flashcardsDataAvailable', (eventOrData) => {
+            const flashcardsPayload = eventOrData.data || eventOrData;
+            activateFlashcardsView();
+            if (flashcardsWidget && typeof flashcardsWidget.loadFlashcards === 'function') {
+                flashcardsWidget.loadFlashcards(flashcardsPayload);
+            }
         });
 
         chatWidget.on('quizDataAvailable', (eventOrData) => {
