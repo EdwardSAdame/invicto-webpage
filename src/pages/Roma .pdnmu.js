@@ -66,6 +66,7 @@ $w.onReady(async function () {
     }
 
     function resetToSoloMode() {
+        console.log("[HOST PAGE DEBUG] resetToSoloMode() executing. Collapsing active views.");
         $docContainer.collapse();
         $docFrame.postMessage(""); 
         layoutManager.setSoloMode();
@@ -157,17 +158,16 @@ $w.onReady(async function () {
         });
     }
 
-    // NEW: Close button listener for the flashcards wrapper
-    if ($w('#closeFlashcardsView')) {
-        $w('#closeFlashcardsView').onClick(() => {
-            resetToSoloMode();
-        });
-    }
-
     if (quizWidget) {
-        quizWidget.on('onCloseRequested', () => {
-            resetToSoloMode();
-        });
+        if (typeof quizWidget.onCloseRequested === 'function') {
+            quizWidget.onCloseRequested(() => {
+                resetToSoloMode();
+            });
+        } else if (typeof quizWidget.on === 'function') {
+            quizWidget.on('onCloseRequested', () => {
+                resetToSoloMode();
+            });
+        }
 
         quizWidget.on('postMessageToChat', (event) => {
             const promptText = event.data.text;
@@ -185,9 +185,15 @@ $w.onReady(async function () {
     }
 
     if (mentalMapWidget) {
-        mentalMapWidget.on('onCloseRequested', () => {
-            resetToSoloMode();
-        });
+        if (typeof mentalMapWidget.onCloseRequested === 'function') {
+            mentalMapWidget.onCloseRequested(() => {
+                resetToSoloMode();
+            });
+        } else if (typeof mentalMapWidget.on === 'function') {
+            mentalMapWidget.on('onCloseRequested', () => {
+                resetToSoloMode();
+            });
+        }
 
         mentalMapWidget.on('onNodeExplored', (event) => {
             const clickedLabel = event.data.label;
@@ -205,8 +211,26 @@ $w.onReady(async function () {
     }
 
     if (flashcardsWidget) {
-        flashcardsWidget.on('onCloseRequested', () => {
-            resetToSoloMode();
-        });
+        // FIXED: Using standard Velo syntax for Widget API events
+        if (typeof flashcardsWidget.onCloseRequested === 'function') {
+            flashcardsWidget.onCloseRequested(() => {
+                console.log("[HOST PAGE DEBUG] Caught event via flashcardsWidget.onCloseRequested()");
+                resetToSoloMode();
+            });
+        } 
+        // Fallback depending on your specific widget compilation
+        else if (typeof flashcardsWidget.on === 'function') {
+            flashcardsWidget.on('onCloseRequested', () => {
+                console.log("[HOST PAGE DEBUG] Caught event via flashcardsWidget.on('onCloseRequested')");
+                resetToSoloMode();
+            });
+        } 
+        // Velo sometimes prepends 'on' if the API event name already starts with 'on'
+        else if (typeof flashcardsWidget.onOnCloseRequested === 'function') {
+            flashcardsWidget.onOnCloseRequested(() => {
+                console.log("[HOST PAGE DEBUG] Caught event via flashcardsWidget.onOnCloseRequested()");
+                resetToSoloMode();
+            });
+        }
     }
 });
