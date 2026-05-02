@@ -10,11 +10,11 @@ $w.onReady(async function () {
     const chatWidget = $w('#chatUi');
     const quizWidget = $w('#quizUi');
     const mentalMapWidget = $w('#mentalMindUi'); 
-    const flashcardsWidget = $w('#flashcardsUi'); // NEW: Reference for future flashcards widget
+    const flashcardsWidget = $w('#flashcardUi'); // FIXED: Corrected ID to match the canvas element
     
     const $quizWrapper = $w('#quizWrapper');
     const $mentalMapWrapper = $w('#mentalMapWrapper'); 
-    const $flashcardsWrapper = $w('#flashcardsWrapper'); // NEW: Added flashcards container reference
+    const $flashcardsWrapper = $w('#flashcardsWrapper'); 
     
     const $docContainer = $w('#docViewerContainer');
     const $docFrame = $w('#docViewerFrame');
@@ -26,7 +26,7 @@ $w.onReady(async function () {
         chatWidget: chatWidget, 
         quizPanel: $quizWrapper, 
         mentalMapPanel: $mentalMapWrapper, 
-        flashcardsPanel: $flashcardsWrapper, // NEW: Passed to layout manager
+        flashcardsPanel: $flashcardsWrapper, 
         marginL: $marginL,
         marginR: $marginR
     });
@@ -49,9 +49,7 @@ $w.onReady(async function () {
         layoutManager.setMentalMapMode(); 
     }
 
-    // NEW: Function to activate Flashcards view
     function activateFlashcardsView() {
-        console.log("[FLASHCARDS-DEBUG] 6. activateFlashcardsView() called. Asking layoutManager to set mode...");
         if (!$docContainer.collapsed) {
             $docContainer.collapse();
             $docFrame.postMessage(""); 
@@ -85,13 +83,10 @@ $w.onReady(async function () {
             activateMentalMapView(); 
         });
 
-        // Listen for flashcards intent from the chat widget
         chatWidget.on('flashcardsMode', () => {
-            console.log("[FLASHCARDS-DEBUG] 5. Host Page (Roma) received 'flashcardsMode' event from Widget!");
             activateFlashcardsView(); 
         });
 
-        // NEW: Intercept flashcards data and pass to the flashcards widget
         chatWidget.on('flashcardsDataAvailable', (eventOrData) => {
             const flashcardsPayload = eventOrData.data || eventOrData;
             activateFlashcardsView();
@@ -202,7 +197,6 @@ $w.onReady(async function () {
         });
     }
 
-    // NEW: Listen for close requests from the future flashcards widget
     if (flashcardsWidget) {
         flashcardsWidget.on('onCloseRequested', () => {
             resetToSoloMode();
