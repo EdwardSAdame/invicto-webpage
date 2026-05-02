@@ -10,7 +10,7 @@ $w.onReady(async function () {
     const chatWidget = $w('#chatUi');
     const quizWidget = $w('#quizUi');
     const mentalMapWidget = $w('#mentalMindUi'); 
-    const flashcardsWidget = $w('#flashcardUi'); // FIXED: Corrected ID to match the canvas element
+    const flashcardsWidget = $w('#flashcardUi');
     
     const $quizWrapper = $w('#quizWrapper');
     const $mentalMapWrapper = $w('#mentalMapWrapper'); 
@@ -153,6 +153,13 @@ $w.onReady(async function () {
 
     if ($w('#closeDocViewer')) {
         $w('#closeDocViewer').onClick(() => {
+            resetToSoloMode();
+        });
+    }
+
+    // NEW: Close button listener for the flashcards wrapper
+    if ($w('#closeFlashcardsView')) {
+        $w('#closeFlashcardsView').onClick(() => {
             resetToSoloMode();
         });
     }
