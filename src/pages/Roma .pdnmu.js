@@ -86,6 +86,9 @@ $w.onReady(async function () {
 
         chatWidget.on('flashcardsMode', () => {
             activateFlashcardsView(); 
+            if (flashcardsWidget && typeof flashcardsWidget.startLoading === 'function') {
+                flashcardsWidget.startLoading();
+            }
         });
 
         chatWidget.on('flashcardsDataAvailable', (eventOrData) => {
@@ -211,21 +214,18 @@ $w.onReady(async function () {
     }
 
     if (flashcardsWidget) {
-        // FIXED: Using standard Velo syntax for Widget API events
         if (typeof flashcardsWidget.onCloseRequested === 'function') {
             flashcardsWidget.onCloseRequested(() => {
                 console.log("[HOST PAGE DEBUG] Caught event via flashcardsWidget.onCloseRequested()");
                 resetToSoloMode();
             });
         } 
-        // Fallback depending on your specific widget compilation
         else if (typeof flashcardsWidget.on === 'function') {
             flashcardsWidget.on('onCloseRequested', () => {
                 console.log("[HOST PAGE DEBUG] Caught event via flashcardsWidget.on('onCloseRequested')");
                 resetToSoloMode();
             });
         } 
-        // Velo sometimes prepends 'on' if the API event name already starts with 'on'
         else if (typeof flashcardsWidget.onOnCloseRequested === 'function') {
             flashcardsWidget.onOnCloseRequested(() => {
                 console.log("[HOST PAGE DEBUG] Caught event via flashcardsWidget.onOnCloseRequested()");
