@@ -99,6 +99,15 @@ $w.onReady(async function () {
             }
         });
 
+        // NEW: Listener to catch the image stream and pass it to the flashcards widget
+        chatWidget.on('flashcardsImageAvailable', (eventOrData) => {
+            const imagePayload = eventOrData.data || eventOrData;
+            activateFlashcardsView();
+            if (flashcardsWidget && typeof flashcardsWidget.streamBackgroundImage === 'function') {
+                flashcardsWidget.streamBackgroundImage(imagePayload);
+            }
+        });
+
         chatWidget.on('quizDataAvailable', (eventOrData) => {
             const quizPayload = eventOrData.data || eventOrData;
             activateQuizView(); 
