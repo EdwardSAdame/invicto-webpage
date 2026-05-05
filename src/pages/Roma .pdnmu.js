@@ -99,12 +99,21 @@ $w.onReady(async function () {
             }
         });
 
-        // NEW: Listener to catch the image stream and pass it to the flashcards widget
+        // Catches the background image stream chunks
         chatWidget.on('flashcardsImageAvailable', (eventOrData) => {
             const imagePayload = eventOrData.data || eventOrData;
             activateFlashcardsView();
             if (flashcardsWidget && typeof flashcardsWidget.streamBackgroundImage === 'function') {
                 flashcardsWidget.streamBackgroundImage(imagePayload);
+            }
+        });
+
+        // 🟢 NEW: Catches the individual flashcards as they stream in
+        chatWidget.on('flashcardStreamItem', (eventOrData) => {
+            const cardPayload = eventOrData.data || eventOrData;
+            activateFlashcardsView();
+            if (flashcardsWidget && typeof flashcardsWidget.streamFlashcardItem === 'function') {
+                flashcardsWidget.streamFlashcardItem(cardPayload);
             }
         });
 
@@ -225,19 +234,16 @@ $w.onReady(async function () {
     if (flashcardsWidget) {
         if (typeof flashcardsWidget.onCloseRequested === 'function') {
             flashcardsWidget.onCloseRequested(() => {
-                console.log("[HOST PAGE DEBUG] Caught event via flashcardsWidget.onCloseRequested()");
                 resetToSoloMode();
             });
         } 
         else if (typeof flashcardsWidget.on === 'function') {
             flashcardsWidget.on('onCloseRequested', () => {
-                console.log("[HOST PAGE DEBUG] Caught event via flashcardsWidget.on('onCloseRequested')");
                 resetToSoloMode();
             });
         } 
         else if (typeof flashcardsWidget.onOnCloseRequested === 'function') {
             flashcardsWidget.onOnCloseRequested(() => {
-                console.log("[HOST PAGE DEBUG] Caught event via flashcardsWidget.onOnCloseRequested()");
                 resetToSoloMode();
             });
         }
