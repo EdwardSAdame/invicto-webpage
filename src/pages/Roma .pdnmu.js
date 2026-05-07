@@ -108,7 +108,7 @@ $w.onReady(async function () {
             }
         });
 
-        // 🟢 NEW: Catches the individual flashcards as they stream in
+        // Catches the individual flashcards as they stream in
         chatWidget.on('flashcardStreamItem', (eventOrData) => {
             const cardPayload = eventOrData.data || eventOrData;
             activateFlashcardsView();
@@ -247,5 +247,18 @@ $w.onReady(async function () {
                 resetToSoloMode();
             });
         }
+
+        // 🟢 NEW: Listen for the generated prompt from the Flashcards Widget
+        flashcardsWidget.on('postMessageToChat', (event) => {
+            const promptText = event.data.text;
+            if (chatWidget && typeof chatWidget.sendMessage === 'function') {
+                // Ensure UI is ready for new stream, then fire message
+                activateFlashcardsView();
+                if (typeof flashcardsWidget.startLoading === 'function') {
+                    flashcardsWidget.startLoading();
+                }
+                chatWidget.sendMessage(promptText);
+            }
+        });
     }
 });
