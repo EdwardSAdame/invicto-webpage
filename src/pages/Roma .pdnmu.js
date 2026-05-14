@@ -66,7 +66,6 @@ $w.onReady(async function () {
     }
 
     function resetToSoloMode() {
-        console.log("[HOST PAGE DEBUG] resetToSoloMode() executing. Collapsing active views.");
         $docContainer.collapse();
         $docFrame.postMessage(""); 
         layoutManager.setSoloMode();
@@ -248,7 +247,7 @@ $w.onReady(async function () {
             });
         }
 
-        // 🟢 NEW: Listen for the generated prompt from the Flashcards Widget
+        // NEW: Listen for the generated prompt from the Flashcards Widget
         flashcardsWidget.on('postMessageToChat', (event) => {
             const promptText = event.data.text;
             if (chatWidget && typeof chatWidget.sendMessage === 'function') {
