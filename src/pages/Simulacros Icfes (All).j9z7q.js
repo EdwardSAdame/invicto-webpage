@@ -1,5 +1,5 @@
 import { fetchMockExamCatalog } from 'backend/mockExamService';
-import wixLocation from 'wix-location'; // 1. Descomentamos la librería de navegación
+import wixLocation from 'wix-location';
 
 $w.onReady(function () {
     
@@ -18,9 +18,15 @@ $w.onReady(function () {
 
         // 2. Evento de clic en el botón
         $item('#startExamButton').onClick(() => {
-            // Construimos la URL a la que el usuario será enviado.
-            // Ejemplo: /simulacro-icfes/matematicas?examId=math_vol_02.json
-            const targetUrl = `/simulacro-icfes/${itemData.componentId}?examId=${itemData.examId}`;
+            
+            // Construimos la URL dinámica agregando todos los datos que el Widget necesita.
+            // Usamos encodeURIComponent para los textos e imágenes para que la URL sea válida.
+            const targetUrl = `/simulacro-icfes/${itemData.componentId}` + 
+                              `?examId=${itemData.examId}` +
+                              `&title=${encodeURIComponent(itemData.componentTitle || "")}` +
+                              `&qCount=${itemData.questionCount || 0}` +
+                              `&time=${itemData.timeLimitMinutes || 0}` +
+                              `&img=${encodeURIComponent(imageUrl)}`;
             
             console.log("Redirigiendo a:", targetUrl);
             
