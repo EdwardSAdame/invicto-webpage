@@ -2,18 +2,29 @@ import wixWindow from 'wix-window';
 
 export function setupChatToggle($w) {
   const formFactor = wixWindow.formFactor;
+  const isDesktop = formFactor === "Desktop";
   const isMobileOrTablet = formFactor === "Mobile" || formFactor === "Tablet";
 
-  // Desktop: just uncollapse the chat; do not collapse anything else
-  if (!isMobileOrTablet) {
-    if ($w('#chatContainer').collapsed) {
-      $w('#chatContainer').expand(); // restores the editor-defined size
+  // Cache element references for cleaner code
+  const chatBox = $w('#chatContainer');
+  const testBox = $w('#testContainer');
+  const leftSpacer = $w('#leftMarginSpacer');
+  const rightSpacer = $w('#rightMarginSpacer');
+
+  // Initial State Setup
+  if (isDesktop) {
+    // Desktop: chat starts open, so spacers must be collapsed
+    if (chatBox.collapsed) {
+      chatBox.expand(); 
     }
-    // DO NOT collapse #testContainer here
+    leftSpacer.collapse();
+    rightSpacer.collapse();
   } else {
     // Mobile & Tablet: start collapsed (unchanged)
-    $w('#chatContainer').collapse();
-    $w('#testContainer').expand();
+    chatBox.collapse();
+    testBox.expand();
+    leftSpacer.collapse();
+    rightSpacer.collapse();
   }
 
   // Target the new Custom Element
@@ -21,18 +32,31 @@ export function setupChatToggle($w) {
 
   // Ensure the element exists on the current rendering cycle before attaching events
   if (aiButton) {
-    // @ts-ignore - Bypasses Velo's strict type linter for custom element methods
+    // @ts-ignore - Bypasses Velo strict type linter for custom element methods
     aiButton.on('onAiButtonClick', () => {
-      const chatBox = $w('#chatContainer');
-      const testBox = $w('#testContainer');
-
+      
       if (chatBox.collapsed) {
+        // ACTION: Opening the chat
         chatBox.expand();
-        // On small screens hide the test; on desktop keep it visible
-        if (isMobileOrTablet) testBox.collapse();
+        
+        if (isMobileOrTablet) {
+          testBox.collapse();
+        } else if (isDesktop) {
+          // On desktop, chat takes up space, so we remove the breathing room
+          leftSpacer.collapse();
+          rightSpacer.collapse();
+        }
+        
       } else {
+        // ACTION: Closing the chat
         chatBox.collapse();
         testBox.expand();
+        
+        if (isDesktop) {
+          // On desktop, test container takes full width, so we add breathing room
+          leftSpacer.expand();
+          rightSpacer.expand();
+        }
       }
     });
   }
