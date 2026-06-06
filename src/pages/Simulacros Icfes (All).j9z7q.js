@@ -5,9 +5,9 @@ $w.onReady(function () {
     
     $w('#componentRepeater').onItemReady(($item, itemData, index) => {
         
-        // Textos e Imágenes (Paracaídas de seguridad)
-        $item('#componentTitle').text = itemData.componentTitle || "Título no disponible";
-        $item('#componentDescription').text = itemData.componentDescription || "Descripción no disponible";
+        // Textos e Imagenes
+        $item('#componentTitle').text = itemData.componentTitle || "Titulo no disponible";
+        $item('#componentDescription').text = itemData.componentDescription || "Descripcion no disponible";
         $item('#componentStats').text = `${itemData.questionCount || 0} Preguntas • ${itemData.timeLimitMinutes || 0} Minutos`;
 
         let imageUrl = itemData.componentImage;
@@ -16,11 +16,8 @@ $w.onReady(function () {
         }
         $item('#componentImage').src = imageUrl;
 
-        // 2. Evento de clic en el botón
-        $item('#startExamButton').onClick(() => {
-            
-            // Construimos la URL dinámica agregando todos los datos que el Widget necesita.
-            // Usamos encodeURIComponent para los textos e imágenes para que la URL sea válida.
+        // 2. Encapsulate navigation logic to avoid repetition (Clean Code)
+        const navigateToExam = () => {
             const targetUrl = `/simulacro-icfes/${itemData.componentId}` + 
                               `?examId=${itemData.examId}` +
                               `&title=${encodeURIComponent(itemData.componentTitle || "")}` +
@@ -29,10 +26,12 @@ $w.onReady(function () {
                               `&img=${encodeURIComponent(imageUrl)}`;
             
             console.log("Redirigiendo a:", targetUrl);
-            
-            // Navegamos a la nueva página
             wixLocation.to(targetUrl);
-        });
+        };
+
+        // 3. Assign the shared logic to both elements
+        $item('#startExamButton').onClick(navigateToExam);
+        $item('#componentImage').onClick(navigateToExam);
 
     });
 
@@ -53,9 +52,9 @@ async function loadCatalog() {
 
             $w('#componentRepeater').data = dataForRepeater;
         } else {
-            console.warn("El catálogo llegó vacío.");
+            console.warn("El catalogo llego vacio.");
         }
     } catch (error) {
-        console.error("Error crítico al cargar el menú:", error);
+        console.error("Error critico al cargar el menu:", error);
     }
 }
