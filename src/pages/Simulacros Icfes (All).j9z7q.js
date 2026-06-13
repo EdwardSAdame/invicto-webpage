@@ -7,7 +7,6 @@ $w.onReady(function () {
     
     $w('#componentRepeater').onItemReady(($item, itemData, index) => {
         
-        // Textos e Imagenes
         $item('#componentTitle').text = itemData.componentTitle || "Titulo no disponible";
         $item('#componentDescription').text = itemData.componentDescription || "Descripcion no disponible";
         $item('#componentStats').text = `${itemData.questionCount || 0} Preguntas • ${itemData.timeLimitMinutes || 0} Minutos`;
@@ -18,9 +17,13 @@ $w.onReady(function () {
         }
         $item('#componentImage').src = imageUrl;
 
-        // 2. Encapsulate navigation logic using the NEW wixLocationFrontend
-        const navigateToExam = () => {
-            // This builds exactly the URL you requested: /simulacro-icfes/ingles, etc.
+        // --- NAVIGATION LOGIC WITH HEAVY LOGS ---
+        const navigateToExam = (event) => {
+            console.log("====================================");
+            console.log("👉 ¡Clic detectado en el Repeater!");
+            console.log("Elemento clickeado ID:", event.target.id);
+            console.log("Datos de la materia seleccionada:", itemData.componentId);
+            
             const targetUrl = `/simulacro-icfes/${itemData.componentId}` + 
                               `?examId=${itemData.examId}` +
                               `&title=${encodeURIComponent(itemData.componentTitle || "")}` +
@@ -28,13 +31,18 @@ $w.onReady(function () {
                               `&time=${itemData.timeLimitMinutes || 0}` +
                               `&img=${encodeURIComponent(imageUrl)}`;
             
-            console.log("Redirigiendo dinámicamente a:", targetUrl);
+            console.log("🔗 URL dinámica generada:", targetUrl);
             
-            // USING THE NEW ROUTER TO FIX THE SILENT CLICK
-            wixLocationFrontend.to(targetUrl);
+            try {
+                wixLocationFrontend.to(targetUrl);
+                console.log("🚀 Comando wixLocationFrontend.to() ejecutado.");
+            } catch (err) {
+                console.error("❌ Error en código al intentar navegar:", err);
+            }
+            console.log("====================================");
         };
 
-        // 3. Assign the shared logic to both elements
+        // Asignación de clics
         $item('#startExamButton').onClick(navigateToExam);
         $item('#componentImage').onClick(navigateToExam);
 
@@ -58,7 +66,6 @@ async function loadCatalogFromCDN() {
         const catalogData = responseData.catalog;
 
         if (catalogData && catalogData.length > 0) {
-            // Agrupar y seleccionar aleatoriamente un volumen por materia
             const randomizedCatalog = processAndRandomizeCatalog(catalogData);
             $w('#componentRepeater').data = randomizedCatalog;
         } else {
@@ -69,12 +76,8 @@ async function loadCatalogFromCDN() {
     }
 }
 
-/**
- * Agrupa los exámenes por materia y elige uno al azar.
- */
 function processAndRandomizeCatalog(catalog) {
     const groupedExams = {};
-
     catalog.forEach(exam => {
         if (!groupedExams[exam.componentId]) {
             groupedExams[exam.componentId] = [];
@@ -83,7 +86,6 @@ function processAndRandomizeCatalog(catalog) {
     });
 
     const finalSelection = [];
-
     for (const componentId in groupedExams) {
         const examsArray = groupedExams[componentId];
         const randomIndex = Math.floor(Math.random() * examsArray.length);
@@ -94,6 +96,5 @@ function processAndRandomizeCatalog(catalog) {
             _id: selectedExam.componentId 
         });
     }
-
     return finalSelection;
 }
