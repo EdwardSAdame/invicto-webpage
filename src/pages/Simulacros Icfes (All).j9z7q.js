@@ -1,11 +1,13 @@
-import { fetchMockExamCatalog } from 'backend/mockExamService';
+import { fetch } from 'wix-fetch';
 import wixLocation from 'wix-location';
+
+const CDN_CATALOG_URL = "https://cdn.invicto.com.co/icfes/general/icfes_exam.json";
 
 $w.onReady(function () {
     
     $w('#componentRepeater').onItemReady(($item, itemData, index) => {
         
-        // Textos e Imagenes
+        // Text and Images
         $item('#componentTitle').text = itemData.componentTitle || "Titulo no disponible";
         $item('#componentDescription').text = itemData.componentDescription || "Descripcion no disponible";
         $item('#componentStats').text = `${itemData.questionCount || 0} Preguntas • ${itemData.timeLimitMinutes || 0} Minutos`;
@@ -16,7 +18,7 @@ $w.onReady(function () {
         }
         $item('#componentImage').src = imageUrl;
 
-        // 2. Encapsulate navigation logic to avoid repetition (Clean Code)
+        // Encapsulate navigation logic
         const navigateToExam = () => {
             const targetUrl = `/simulacro-icfes/${itemData.componentId}` + 
                               `?examId=${itemData.examId}` +
@@ -29,7 +31,7 @@ $w.onReady(function () {
             wixLocation.to(targetUrl);
         };
 
-        // 3. Assign the shared logic to both elements
+        // Assign the shared logic to interactive elements
         $item('#startExamButton').onClick(navigateToExam);
         $item('#componentImage').onClick(navigateToExam);
 
@@ -40,21 +42,60 @@ $w.onReady(function () {
 
 async function loadCatalog() {
     try {
-        const catalogData = await fetchMockExamCatalog();
+        const response = await fetch(CDN_CATALOG_URL, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`CDN fetch failed with status: ${response.status}`);
+        }
+
+        const responseData = await response.json();
+        const catalogData = responseData.catalog;
 
         if (catalogData && catalogData.length > 0) {
-            const dataForRepeater = catalogData.map((exam) => {
-                return {
-                    ...exam,
-                    _id: exam.examId 
-                };
-            });
-
-            $w('#componentRepeater').data = dataForRepeater;
+            const randomizedCatalog = processAndRandomizeCatalog(catalogData);
+            $w('#componentRepeater').data = randomizedCatalog;
         } else {
             console.warn("El catalogo llego vacio.");
         }
     } catch (error) {
-        console.error("Error critico al cargar el menu:", error);
+        console.error("Error critico al cargar el menu desde el CDN:", error);
     }
+}
+
+/**
+ * Groups the catalog by componentId, selects a random exam for each component, 
+ * and formats the resulting array for the Wix Repeater.
+ */
+function processAndRandomizeCatalog(catalog) {
+    const groupedExams = {};
+
+    // Grouping exams by their componentId (e.g., 'matematicas', 'ingles')
+    catalog.forEach(exam => {
+        if (!groupedExams[exam.componentId]) {
+            groupedExams[exam.componentId] = [];
+        }
+        groupedExams[exam.componentId].push(exam);
+    });
+
+    const finalSelection = [];
+
+    // Select one random exam per componentId
+    for (const componentId in groupedExams) {
+        const examsArray = groupedExams[componentId];
+        const randomIndex = Math.floor(Math.random() * examsArray.length);
+        const selectedExam = examsArray[randomIndex];
+
+        // Wix repeaters require a unique _id field as a string
+        finalSelection.push({
+            ...selectedExam,
+            _id: selectedExam.componentId 
+        });
+    }
+
+    return finalSelection;
 }
