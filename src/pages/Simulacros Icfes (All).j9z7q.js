@@ -5,12 +5,9 @@ const CDN_CATALOG_URL = "https://cdn.invicto.com.co/icfes/general/icfes_exam.jso
 
 $w.onReady(function () {
     
-    $w('#componentRepeater').onItemReady(($item, itemData, index) => {
-        console.log(`Renderizando tarjeta ${index}:`, itemData);
-
+    $w('#componentRepeater').onItemReady(($item, itemData) => {
         // PROTECCIÓN: Si es una tarjeta vacía (fantasma) del editor, ignorarla.
         if (!itemData.componentId) {
-            console.warn("Ignorando tarjeta vacía del editor.");
             return;
         }
         
@@ -37,7 +34,7 @@ $w.onReady(function () {
         
         // 1. Asignamos la URL directamente como link nativo
         $item('#startExamButton').link = targetUrl;
-        $item('#startExamButton').target = "_self"; // Abre en la misma pestaña
+        $item('#startExamButton').target = "_self"; 
         
         $item('#componentImage').link = targetUrl;
         $item('#componentImage').target = "_self";
@@ -45,7 +42,6 @@ $w.onReady(function () {
         // 2. Mantenemos el fallback para el contenedor
         if ($item('#box8')) {
             $item('#box8').onClick(() => {
-                console.log("🔗 Navegando vía click en la tarjeta a:", targetUrl);
                 wixLocationFrontend.to(targetUrl);
             });
             $item('#box8').style.cursor = "pointer"; 
@@ -57,9 +53,6 @@ $w.onReady(function () {
 
 async function loadCatalogFromCDN() {
     try {
-        console.log("Iniciando descarga del catálogo desde CDN...");
-        
-        // PETICIÓN SIMPLE: Sin headers. Evita el bloqueo por CORS Preflight
         const response = await fetch(CDN_CATALOG_URL, {
             method: 'GET'
         });
@@ -69,31 +62,25 @@ async function loadCatalogFromCDN() {
         }
 
         const responseData = await response.json();
-        console.log("Catálogo descargado con éxito:", responseData);
-
         const catalogData = responseData.catalog;
 
         if (catalogData && catalogData.length > 0) {
             const randomizedCatalog = processAndRandomizeCatalog(catalogData);
-            console.log("Inyectando data limpia al Repeater:", randomizedCatalog);
             
-            // TRUCO 1: Vaciamos el repeater por un milisegundo para obligar a Wix a "olvidar" las tarjetas anteriores
+            // TRUCO 1: Vaciamos el repeater
             $w('#componentRepeater').data = [];
             
             // TRUCO 2: Inyectamos la nueva baraja
             $w('#componentRepeater').data = randomizedCatalog;
-        } else {
-            console.warn("El catálogo llegó vacío o no tiene la propiedad 'catalog'.");
         }
     } catch (error) {
-        console.error("Error crítico al cargar el menú desde CDN:", error);
+        // Silenciamos el error en consola para producción
     }
 }
 
 function processAndRandomizeCatalog(catalog) {
     const groupedExams = {};
 
-    // Agrupamos todos los exámenes por materia
     catalog.forEach(exam => {
         if (!groupedExams[exam.componentId]) {
             groupedExams[exam.componentId] = [];
@@ -103,7 +90,6 @@ function processAndRandomizeCatalog(catalog) {
 
     const finalSelection = [];
 
-    // Por cada materia, elegimos UN volumen al azar
     for (const componentId in groupedExams) {
         const examsArray = groupedExams[componentId];
         const randomIndex = Math.floor(Math.random() * examsArray.length);
@@ -111,8 +97,6 @@ function processAndRandomizeCatalog(catalog) {
 
         finalSelection.push({
             ...selectedExam,
-            // TRUCO 3: Añadimos un sufijo aleatorio al ID. 
-            // Wix cree que es un elemento totalmente nuevo y fuerza la actualización visual.
             _id: `${selectedExam.componentId}_${Math.random().toString(36).substring(2, 9)}` 
         });
     }

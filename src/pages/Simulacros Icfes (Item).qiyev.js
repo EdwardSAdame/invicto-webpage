@@ -21,6 +21,4 @@ $w.onReady(function () {
     // 2. Initialize Event Listeners
     setupChatToggle($w);
     setupCloseChatListener($w);
-    
-    console.log("Página Host: Lista con layout responsivo. El Widget se encargará del resto.");
 });
