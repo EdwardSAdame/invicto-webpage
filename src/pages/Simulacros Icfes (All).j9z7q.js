@@ -8,6 +8,7 @@ $w.onReady(function () {
     $w('#componentRepeater').onItemReady(($item, itemData, index) => {
         console.log(`Renderizando tarjeta ${index}:`, itemData);
 
+        // PROTECCIÓN: Si es una tarjeta vacía (fantasma) del editor, ignorarla.
         if (!itemData.componentId) {
             console.warn("Ignorando tarjeta vacía del editor.");
             return;
@@ -23,31 +24,30 @@ $w.onReady(function () {
         }
         $item('#componentImage').src = imageUrl;
 
-        // --- LÓGICA DE NAVEGACIÓN CORREGIDA ---
-        const navigateToExam = (event) => {
-            // Asegúrate de que este prefijo sea EXACTAMENTE el de tu página dinámica en Wix.
-            // Si en Wix dice "/simulacros-icfes/{Title}", cámbialo aquí abajo añadiendo la "s".
-            const prefix = "simulacro-icfes"; 
-            
-            // Construimos la URL limpia sin dobles slashes
-            const targetUrl = `/${prefix}/${itemData.componentId}` + 
-                              `?examId=${itemData.examId}` +
-                              `&title=${encodeURIComponent(itemData.componentTitle || "")}` +
-                              `&qCount=${itemData.questionCount || 0}` +
-                              `&time=${itemData.timeLimitMinutes || 0}` +
-                              `&img=${encodeURIComponent(imageUrl)}`;
-            
-            console.log("🔗 Navegando dinámicamente a:", targetUrl);
-            wixLocationFrontend.to(targetUrl);
-        };
-
-        // Asignación de clics
-        $item('#startExamButton').onClick(navigateToExam);
-        $item('#componentImage').onClick(navigateToExam);
+        // --- LÓGICA DE NAVEGACIÓN A PRUEBA DE BALAS ---
+        const prefix = "simulacro-icfes"; 
         
-        // Clic en la tarjeta completa (ajusta #box8 si tu contenedor tiene otro ID)
+        // Construimos la URL limpia
+        const targetUrl = `/${prefix}/${itemData.componentId}` + 
+                          `?examId=${itemData.examId}` +
+                          `&title=${encodeURIComponent(itemData.componentTitle || "")}` +
+                          `&qCount=${itemData.questionCount || 0}` +
+                          `&time=${itemData.timeLimitMinutes || 0}` +
+                          `&img=${encodeURIComponent(imageUrl)}`;
+        
+        // 1. Asignamos la URL directamente como link nativo (Esto JAMÁS falla)
+        $item('#startExamButton').link = targetUrl;
+        $item('#startExamButton').target = "_self"; // Abre en la misma pestaña
+        
+        $item('#componentImage').link = targetUrl;
+        $item('#componentImage').target = "_self";
+
+        // 2. Mantenemos el fallback para el contenedor completo por si acaso (ajusta #box8 si tu contenedor se llama distinto)
         if ($item('#box8')) {
-            $item('#box8').onClick(navigateToExam);
+            $item('#box8').onClick(() => {
+                console.log("🔗 Navegando vía click en la tarjeta a:", targetUrl);
+                wixLocationFrontend.to(targetUrl);
+            });
             $item('#box8').style.cursor = "pointer"; 
         }
     });
