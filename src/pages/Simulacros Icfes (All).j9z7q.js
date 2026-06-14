@@ -58,9 +58,10 @@ $w.onReady(function () {
 async function loadCatalogFromCDN() {
     try {
         console.log("Iniciando descarga del catálogo desde CDN...");
+        
+        // PETICIÓN SIMPLE: Quitamos los 'headers' para evitar el bloqueo por CORS Preflight
         const response = await fetch(CDN_CATALOG_URL, {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json' }
+            method: 'GET'
         });
 
         if (!response.ok) {
