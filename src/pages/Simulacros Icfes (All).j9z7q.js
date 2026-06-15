@@ -21,16 +21,17 @@ $w.onReady(function () {
         }
         $item('#componentImage').src = imageUrl;
 
-        // --- LÓGICA DE NAVEGACIÓN A PRUEBA DE BALAS ---
+        // --- LÓGICA DE NAVEGACIÓN ---
         const prefix = "simulacro-icfes"; 
         
-        // Construimos la URL limpia
+        // Se agregó '&reset=true' para forzar el borrado de sesión al iniciar desde el directorio
         const targetUrl = `/${prefix}/${itemData.componentId}` + 
                           `?examId=${itemData.examId}` +
                           `&title=${encodeURIComponent(itemData.componentTitle || "")}` +
                           `&qCount=${itemData.questionCount || 0}` +
                           `&time=${itemData.timeLimitMinutes || 0}` +
-                          `&img=${encodeURIComponent(imageUrl)}`;
+                          `&img=${encodeURIComponent(imageUrl)}` +
+                          `&reset=true`; // <--- AQUI SE FUERZA EL REINICIO
         
         // 1. Asignamos la URL directamente como link nativo
         $item('#startExamButton').link = targetUrl;
@@ -67,10 +68,7 @@ async function loadCatalogFromCDN() {
         if (catalogData && catalogData.length > 0) {
             const randomizedCatalog = processAndRandomizeCatalog(catalogData);
             
-            // TRUCO 1: Vaciamos el repeater
             $w('#componentRepeater').data = [];
-            
-            // TRUCO 2: Inyectamos la nueva baraja
             $w('#componentRepeater').data = randomizedCatalog;
         }
     } catch (error) {
