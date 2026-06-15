@@ -24,14 +24,17 @@ $w.onReady(function () {
         // --- LÓGICA DE NAVEGACIÓN ---
         const prefix = "simulacro-icfes"; 
         
-        // Se agregó '&reset=true' para forzar el borrado de sesión al iniciar desde el directorio
+        // Generate a unique token for the reset parameter
+        const uniqueToken = Date.now().toString();
+        
+        // Se agregó el token único para forzar el borrado de sesión al iniciar desde el directorio
         const targetUrl = `/${prefix}/${itemData.componentId}` + 
                           `?examId=${itemData.examId}` +
                           `&title=${encodeURIComponent(itemData.componentTitle || "")}` +
                           `&qCount=${itemData.questionCount || 0}` +
                           `&time=${itemData.timeLimitMinutes || 0}` +
                           `&img=${encodeURIComponent(imageUrl)}` +
-                          `&reset=true`; // <--- AQUI SE FUERZA EL REINICIO
+                          `&reset=${uniqueToken}`; // <--- UNIQUE TOKEN INJECTED HERE
         
         // 1. Asignamos la URL directamente como link nativo
         $item('#startExamButton').link = targetUrl;
