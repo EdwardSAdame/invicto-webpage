@@ -5,14 +5,16 @@ import { setupCloseChatListener } from 'public/closeChatListener.js';
 $w.onReady(function () {
     const isDesktop = wixWindow.formFactor === "Desktop";
 
+    // 0. Widget References (Updated to chatUi)
+    const chatWidget = $w('#chatUi'); 
+    const staticExamWidget = $w('#staticExamUi'); 
+
     // 1. Initial Page Load State
     if (isDesktop) {
-        // On desktop, the chat usually starts open, so we don't need the breathing room yet
         $w('#chatContainer').expand();
         $w('#leftMarginSpacer').collapse();
         $w('#rightMarginSpacer').collapse();
     } else {
-        // On mobile/tablet, chat starts closed, and we want full width (no spacers)
         $w('#chatContainer').collapse();
         $w('#leftMarginSpacer').collapse();
         $w('#rightMarginSpacer').collapse();
@@ -21,4 +23,16 @@ $w.onReady(function () {
     // 2. Initialize Event Listeners
     setupChatToggle($w);
     setupCloseChatListener($w);
+
+    // 3. Exam to Chat Bridge
+    if (staticExamWidget) {
+        staticExamWidget.on('postHiddenMessageToChat', (event) => {
+            const contextText = event.data.text;
+            
+            // Route the hidden context payload to the Chat UI
+            if (chatWidget && typeof chatWidget.sendHiddenMessage === 'function') {
+                chatWidget.sendHiddenMessage(contextText);
+            }
+        });
+    }
 });
