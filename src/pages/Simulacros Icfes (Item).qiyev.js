@@ -27,12 +27,26 @@ $w.onReady(function () {
     // 3. Exam to Chat Bridge
     if (staticExamWidget) {
         staticExamWidget.on('postHiddenMessageToChat', (event) => {
+            console.log("[PAGE BRIDGE] 🟢 Evento 'postHiddenMessageToChat' recibido del Exam Widget");
             const contextText = event.data.text;
+            console.log("[PAGE BRIDGE] 🟢 Payload a enviar:", contextText);
             
             // Route the hidden context payload to the Chat UI
-            if (chatWidget && typeof chatWidget.sendHiddenMessage === 'function') {
-                chatWidget.sendHiddenMessage(contextText);
+            if (chatWidget) {
+                console.log("[PAGE BRIDGE] 🟢 Widget de Chat encontrado en la página.");
+                
+                if (typeof chatWidget.sendHiddenMessage === 'function') {
+                    console.log("[PAGE BRIDGE] 🟢 Función 'sendHiddenMessage' encontrada. Llamando...");
+                    chatWidget.sendHiddenMessage(contextText);
+                    console.log("[PAGE BRIDGE] 🟢 Llamada completada.");
+                } else {
+                    console.warn("[PAGE BRIDGE] 🔴 ADVERTENCIA: El widget de chat no tiene la función 'sendHiddenMessage' expuesta públicamente en esta página.");
+                }
+            } else {
+                console.error("[PAGE BRIDGE] 🔴 ERROR: El widget de chat (#chatUi) no fue encontrado en la página.");
             }
         });
+    } else {
+        console.warn("[PAGE BRIDGE] 🔴 ADVERTENCIA: El widget staticExamUi no fue encontrado al cargar la página.");
     }
 });
