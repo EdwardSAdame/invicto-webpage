@@ -5,8 +5,8 @@ $w.onReady(function () {
     // @ts-ignore - Bypasses Velo's cache if the new ID hasn't registered in the dictionary yet
     const aiButton = $w('#aiCustomButton');
 
-    // Ensure the element exists on the current rendering cycle before attaching events
-    if (aiButton) {
+    // Safely check if the element exists AND if the .on() function is available
+    if (aiButton && typeof aiButton.on === 'function') {
         
         // @ts-ignore - Bypasses Velo's strict type linter for custom element methods
         aiButton.on('onAiButtonClick', (event) => {
