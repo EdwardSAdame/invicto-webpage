@@ -1,12 +1,16 @@
 import { fetch } from 'wix-fetch';
 import wixLocationFrontend from 'wix-location-frontend';
+import { currentMember } from 'wix-members-frontend';
+import { fetchUserProgress } from 'backend/userProgress.jsw';
 
 const CDN_CATALOG_URL = "https://cdn.invicto.com.co/icfes/general/icfes_exam.json";
 
+// Global map to store user progress by ExamId for O(1) lookup
+let progressMap = {};
+
 $w.onReady(function () {
-    
+    // 1. Initialize Repeater Logic before assigning data
     $w('#componentRepeater').onItemReady(($item, itemData) => {
-        // PROTECCIÓN: Si es una tarjeta vacía (fantasma) del editor, ignorarla.
         if (!itemData.componentId) {
             return;
         }
@@ -21,29 +25,41 @@ $w.onReady(function () {
         }
         $item('#componentImage').src = imageUrl;
 
-        // --- LÓGICA DE NAVEGACIÓN ---
+        // 2. Map Progress Data to UI Elements
+        const userProgress = progressMap[itemData.examId];
+
+        if (userProgress) {
+            $item('#textScore').text = `Puntaje: ${userProgress.TotalScore}%`;
+            
+            const minutes = Math.floor(userProgress.TimeUsedSeconds / 60);
+            const seconds = Math.round(userProgress.TimeUsedSeconds % 60);
+            $item('#textTime').text = `Tiempo: ${minutes}m ${seconds}s`;
+            
+            $item('#textScore').expand();
+            $item('#textTime').expand();
+        } else {
+            $item('#textScore').collapse();
+            $item('#textTime').collapse();
+        }
+
+        // 3. Navigation Logic
         const prefix = "simulacro-icfes"; 
-        
-        // Generate a unique token for the reset parameter
         const uniqueToken = Date.now().toString();
         
-        // Se agregó el token único para forzar el borrado de sesión al iniciar desde el directorio
         const targetUrl = `/${prefix}/${itemData.componentId}` + 
                           `?examId=${itemData.examId}` +
                           `&title=${encodeURIComponent(itemData.componentTitle || "")}` +
                           `&qCount=${itemData.questionCount || 0}` +
                           `&time=${itemData.timeLimitMinutes || 0}` +
                           `&img=${encodeURIComponent(imageUrl)}` +
-                          `&reset=${uniqueToken}`; // <--- UNIQUE TOKEN INJECTED HERE
+                          `&reset=${uniqueToken}`;
         
-        // 1. Asignamos la URL directamente como link nativo
         $item('#startExamButton').link = targetUrl;
         $item('#startExamButton').target = "_self"; 
         
         $item('#componentImage').link = targetUrl;
         $item('#componentImage').target = "_self";
 
-        // 2. Mantenemos el fallback para el contenedor
         if ($item('#box8')) {
             $item('#box8').onClick(() => {
                 wixLocationFrontend.to(targetUrl);
@@ -52,30 +68,55 @@ $w.onReady(function () {
         }
     });
 
-    loadCatalogFromCDN();
+    // 4. Trigger Data Fetching
+    loadDataAndPopulateRepeater();
 });
 
-async function loadCatalogFromCDN() {
+async function loadDataAndPopulateRepeater() {
+    let memberId = null;
+    
     try {
-        const response = await fetch(CDN_CATALOG_URL, {
-            method: 'GET'
-        });
+        const member = await currentMember.getMember();
+        if (member && member._id) {
+            memberId = member._id;
+        }
+    } catch (error) {
+        console.warn("User not authenticated or member retrieval failed.");
+    }
 
+    // Fetch catalog and user progress concurrently
+    const [catalogData, progressResponse] = await Promise.all([
+        fetchCatalogFromCDN(),
+        memberId ? fetchUserProgress(memberId) : Promise.resolve({ ok: false, progress: [] })
+    ]);
+
+    // Populate progress map if data exists
+    if (progressResponse && progressResponse.ok && progressResponse.progress) {
+        progressResponse.progress.forEach(item => {
+            progressMap[item.ExamId] = item;
+        });
+    }
+
+    // Process and assign catalog data to the repeater
+    if (catalogData && catalogData.length > 0) {
+        const randomizedCatalog = processAndRandomizeCatalog(catalogData);
+        $w('#componentRepeater').data = randomizedCatalog;
+    }
+}
+
+async function fetchCatalogFromCDN() {
+    try {
+        const response = await fetch(CDN_CATALOG_URL, { method: 'GET' });
+        
         if (!response.ok) {
             throw new Error(`Error CDN: ${response.status}`);
         }
 
         const responseData = await response.json();
-        const catalogData = responseData.catalog;
-
-        if (catalogData && catalogData.length > 0) {
-            const randomizedCatalog = processAndRandomizeCatalog(catalogData);
-            
-            $w('#componentRepeater').data = [];
-            $w('#componentRepeater').data = randomizedCatalog;
-        }
+        return responseData.catalog || [];
     } catch (error) {
-        // Silenciamos el error en consola para producción
+        console.error("Failed to load CDN catalog:", error);
+        return [];
     }
 }
 
