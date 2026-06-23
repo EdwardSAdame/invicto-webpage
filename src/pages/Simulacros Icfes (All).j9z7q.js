@@ -8,16 +8,25 @@ const CDN_CATALOG_URL = "https://cdn.invicto.com.co/icfes/general/icfes_exam.jso
 let progressMap = {};
 
 $w.onReady(function () {
+    console.log("🚀 DEBUG: Script initialized. Version: 2026-06-22-DEBUG");
+
     $w('#componentRepeater').onItemReady(($item, itemData) => {
         if (!itemData.componentId) return;
         
-        // --- UPDATED: Appended 'ICFES | ' to the title ---
-        $item('#componentTitle').text = itemData.componentTitle ? `ICFES | ${itemData.componentTitle}` : "Titulo no disponible";
+        // 🔍 DEBUG: Log the incoming raw data
+        console.log("🔍 DEBUG: Processing item:", itemData.componentTitle, "Data:", itemData);
+        
+        // Formatted Title
+        const newTitle = itemData.componentTitle ? `ICFES | ${itemData.componentTitle}` : "Titulo no disponible";
+        $item('#componentTitle').text = newTitle;
+        console.log("✅ Applied Title:", newTitle);
         
         $item('#componentDescription').text = itemData.componentDescription || "Descripcion no disponible";
         
-        // --- UPDATED: Replaced bullet with a comma ---
-        $item('#componentStats').text = `${itemData.questionCount || 0} Preguntas, ${itemData.timeLimitMinutes || 0} Minutos`;
+        // Formatted Stats
+        const newStats = `${itemData.questionCount || 0} Preguntas, ${itemData.timeLimitMinutes || 0} Minutos`;
+        $item('#componentStats').text = newStats;
+        console.log("✅ Applied Stats:", newStats);
 
         let imageUrl = itemData.componentImage;
         if (!imageUrl || imageUrl.includes("...")) {
@@ -31,7 +40,9 @@ $w.onReady(function () {
         const userProgress = progressMap[itemData.examId];
 
         if (userProgress) {
-            $item('#textScore').text = `${userProgress.TotalScore}/100`;
+            const formattedScore = `${userProgress.TotalScore}/100`;
+            $item('#textScore').text = formattedScore;
+            console.log("✅ Applied Score:", formattedScore, "for Exam:", itemData.examId);
             
             const minutes = Math.floor(userProgress.TimeUsedSeconds / 60);
             const seconds = Math.round(userProgress.TimeUsedSeconds % 60);
@@ -69,21 +80,24 @@ $w.onReady(function () {
 
 async function loadPageSafely() {
     try {
+        console.log("🌐 DEBUG: Fetching CDN...");
         const response = await fetch(CDN_CATALOG_URL, { method: 'GET' });
         
         if (!response.ok) throw new Error(`Error CDN: ${response.status}`);
         
         const responseData = await response.json();
         const catalog = responseData.catalog || [];
+        console.log("✅ DEBUG: CDN loaded", catalog.length, "items.");
 
         const randomizedCatalog = processAndRandomizeCatalog(catalog);
         
         $w('#componentRepeater').data = randomizedCatalog;
+        console.log("✅ DEBUG: Repeater data assigned.");
 
         fetchAndApplyUserProgress();
 
     } catch (error) {
-        // Silenced for production environments
+        console.error("❌ DEBUG: CDN Error:", error);
     }
 }
 
@@ -92,12 +106,15 @@ async function fetchAndApplyUserProgress() {
         const member = await currentMember.getMember();
         
         if (!member || !member._id) {
+            console.log("⚠️ DEBUG: No member logged in.");
             return;
         }
 
+        console.log("👤 DEBUG: Fetching AWS progress for:", member._id);
         const progressResponse = await fetchUserProgress(member._id);
 
         if (progressResponse && progressResponse.ok && progressResponse.progress) {
+            console.log("✅ DEBUG: AWS data received:", progressResponse.progress);
             progressResponse.progress.forEach(item => {
                 progressMap[item.ExamId] = item;
             });
@@ -118,7 +135,7 @@ async function fetchAndApplyUserProgress() {
             });
         }
     } catch (error) {
-        // Silenced for production environments
+        console.error("❌ DEBUG: AWS Fetch Error:", error);
     }
 }
 
