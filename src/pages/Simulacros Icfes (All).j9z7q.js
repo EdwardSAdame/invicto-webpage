@@ -1,18 +1,16 @@
 import { fetch } from 'wix-fetch';
 import wixLocationFrontend from 'wix-location-frontend';
 import { currentMember } from 'wix-members-frontend';
+// Import restored to use the backend file!
+import { fetchUserProgress } from 'backend/userProgress.jsw';
 
 const CDN_CATALOG_URL = "https://cdn.invicto.com.co/icfes/general/icfes_exam.json";
 
-// Global map to store user progress by ExamId for O(1) lookup
 let progressMap = {};
 
 $w.onReady(function () {
-    // 1. Initialize Repeater Logic before assigning data
     $w('#componentRepeater').onItemReady(($item, itemData) => {
-        if (!itemData.componentId) {
-            return;
-        }
+        if (!itemData.componentId) return;
         
         $item('#componentTitle').text = itemData.componentTitle || "Título no disponible";
         $item('#componentDescription').text = itemData.componentDescription || "Descripción no disponible";
@@ -24,7 +22,7 @@ $w.onReady(function () {
         }
         $item('#componentImage').src = imageUrl;
 
-        // 2. Map Progress Data to UI Elements
+        // Map Progress Data to UI Elements
         const userProgress = progressMap[itemData.examId];
 
         if (userProgress) {
@@ -41,7 +39,6 @@ $w.onReady(function () {
             $item('#textTime').collapse();
         }
 
-        // 3. Navigation Logic
         const prefix = "simulacro-icfes"; 
         const uniqueToken = Date.now().toString();
         
@@ -59,15 +56,15 @@ $w.onReady(function () {
         $item('#componentImage').link = targetUrl;
         $item('#componentImage').target = "_self";
 
-        if ($item('#box8')) {
-            $item('#box8').onClick(() => {
+        // SAFETY FIX: Check if box8 exists and is clickable before attaching event
+        const box8 = $item('#box8');
+        if (box8 && typeof box8.onClick === 'function') {
+            box8.onClick(() => {
                 wixLocationFrontend.to(targetUrl);
             });
-            $item('#box8').style.cursor = "pointer"; 
         }
     });
 
-    // 4. Trigger Data Fetching
     loadDataAndPopulateRepeater();
 });
 
@@ -86,7 +83,7 @@ async function loadDataAndPopulateRepeater() {
     // Fetch catalog and user progress concurrently
     const [catalogData, progressResponse] = await Promise.all([
         fetchCatalogFromCDN(),
-        memberId ? fetchUserProgressFromAWS(memberId) : Promise.resolve({ ok: false, progress: [] })
+        memberId ? fetchUserProgress(memberId) : Promise.resolve({ ok: false, progress: [] })
     ]);
 
     // Populate progress map if data exists
@@ -103,39 +100,10 @@ async function loadDataAndPopulateRepeater() {
     }
 }
 
-// --- NEW FUNCTION: Direct call to AWS API Gateway ---
-async function fetchUserProgressFromAWS(userId) {
-    const url = `https://sljyavsulf.execute-api.us-east-1.amazonaws.com/prod/GetUserProgressHandler?userId=${userId}`;
-
-    try {
-        const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-
-        if (!response.ok) {
-            throw new Error(`AWS API returned status: ${response.status}`);
-        }
-
-        const json = await response.json();
-        return json; // Expecting { ok: true, progress: [...] }
-        
-    } catch (error) {
-        console.error("❌ Error fetching user progress directly from AWS:", error);
-        return { ok: false, progress: [], error: error.message };
-    }
-}
-
 async function fetchCatalogFromCDN() {
     try {
         const response = await fetch(CDN_CATALOG_URL, { method: 'GET' });
-        
-        if (!response.ok) {
-            throw new Error(`Error CDN: ${response.status}`);
-        }
-
+        if (!response.ok) throw new Error(`Error CDN: ${response.status}`);
         const responseData = await response.json();
         return responseData.catalog || [];
     } catch (error) {
@@ -146,16 +114,12 @@ async function fetchCatalogFromCDN() {
 
 function processAndRandomizeCatalog(catalog) {
     const groupedExams = {};
-
     catalog.forEach(exam => {
-        if (!groupedExams[exam.componentId]) {
-            groupedExams[exam.componentId] = [];
-        }
+        if (!groupedExams[exam.componentId]) groupedExams[exam.componentId] = [];
         groupedExams[exam.componentId].push(exam);
     });
 
     const finalSelection = [];
-
     for (const componentId in groupedExams) {
         const examsArray = groupedExams[componentId];
         const randomIndex = Math.floor(Math.random() * examsArray.length);
@@ -166,6 +130,5 @@ function processAndRandomizeCatalog(catalog) {
             _id: `${selectedExam.componentId}_${Math.random().toString(36).substring(2, 9)}` 
         });
     }
-
     return finalSelection;
 }
