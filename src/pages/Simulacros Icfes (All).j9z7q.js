@@ -1,7 +1,6 @@
 import { fetch } from 'wix-fetch';
 import wixLocationFrontend from 'wix-location-frontend';
 import { currentMember } from 'wix-members-frontend';
-import { fetchUserProgress } from 'backend/userProgress.jsw';
 
 const CDN_CATALOG_URL = "https://cdn.invicto.com.co/icfes/general/icfes_exam.json";
 
@@ -87,7 +86,7 @@ async function loadDataAndPopulateRepeater() {
     // Fetch catalog and user progress concurrently
     const [catalogData, progressResponse] = await Promise.all([
         fetchCatalogFromCDN(),
-        memberId ? fetchUserProgress(memberId) : Promise.resolve({ ok: false, progress: [] })
+        memberId ? fetchUserProgressFromAWS(memberId) : Promise.resolve({ ok: false, progress: [] })
     ]);
 
     // Populate progress map if data exists
@@ -101,6 +100,31 @@ async function loadDataAndPopulateRepeater() {
     if (catalogData && catalogData.length > 0) {
         const randomizedCatalog = processAndRandomizeCatalog(catalogData);
         $w('#componentRepeater').data = randomizedCatalog;
+    }
+}
+
+// --- NEW FUNCTION: Direct call to AWS API Gateway ---
+async function fetchUserProgressFromAWS(userId) {
+    const url = `https://sljyavsulf.execute-api.us-east-1.amazonaws.com/prod/GetUserProgressHandler?userId=${userId}`;
+
+    try {
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`AWS API returned status: ${response.status}`);
+        }
+
+        const json = await response.json();
+        return json; // Expecting { ok: true, progress: [...] }
+        
+    } catch (error) {
+        console.error("❌ Error fetching user progress directly from AWS:", error);
+        return { ok: false, progress: [], error: error.message };
     }
 }
 
