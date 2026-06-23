@@ -1,4 +1,3 @@
-// src/backend/userProgress.jsw
 import { fetch } from 'wix-fetch';
 
 export async function fetchUserProgress(userId) {
@@ -17,7 +16,7 @@ export async function fetchUserProgress(userId) {
         return await response.json(); 
         
     } catch (error) {
-        console.error("❌ Error fetching user progress from AWS:", error);
+        // Silenced for production
         return { ok: false, progress: [], error: error.message };
     }
 }
