@@ -11,8 +11,8 @@ $w.onReady(function () {
     $w('#componentRepeater').onItemReady(($item, itemData) => {
         if (!itemData.componentId) return;
         
-        $item('#componentTitle').text = itemData.componentTitle || "Título no disponible";
-        $item('#componentDescription').text = itemData.componentDescription || "Descripción no disponible";
+        $item('#componentTitle').text = itemData.componentTitle || "Titulo no disponible";
+        $item('#componentDescription').text = itemData.componentDescription || "Descripcion no disponible";
         $item('#componentStats').text = `${itemData.questionCount || 0} Preguntas • ${itemData.timeLimitMinutes || 0} Minutos`;
 
         let imageUrl = itemData.componentImage;
@@ -27,8 +27,7 @@ $w.onReady(function () {
         const userProgress = progressMap[itemData.examId];
 
         if (userProgress) {
-            // ONLY the number is displayed here
-            $item('#textScore').text = `${userProgress.TotalScore}`;
+            $item('#textScore').text = `${userProgress.TotalScore}/100`;
             
             const minutes = Math.floor(userProgress.TimeUsedSeconds / 60);
             const seconds = Math.round(userProgress.TimeUsedSeconds % 60);
@@ -80,7 +79,7 @@ async function loadPageSafely() {
         fetchAndApplyUserProgress();
 
     } catch (error) {
-        // Silenced for production
+        // Silenced for production environments
     }
 }
 
@@ -103,8 +102,7 @@ async function fetchAndApplyUserProgress() {
                 const userProgress = progressMap[itemData.examId];
 
                 if (userProgress) {
-                    // ONLY the number is displayed here
-                    $item('#textScore').text = `${userProgress.TotalScore}`;
+                    $item('#textScore').text = `${userProgress.TotalScore}/100`;
                     
                     const minutes = Math.floor(userProgress.TimeUsedSeconds / 60);
                     const seconds = Math.round(userProgress.TimeUsedSeconds % 60);
@@ -116,7 +114,7 @@ async function fetchAndApplyUserProgress() {
             });
         }
     } catch (error) {
-        // Silenced for production
+        // Silenced for production environments
     }
 }
 
