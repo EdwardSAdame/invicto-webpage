@@ -1,7 +1,7 @@
 import { fetch } from 'wix-fetch';
 import wixLocationFrontend from 'wix-location-frontend';
 import { currentMember } from 'wix-members-frontend';
-import { fetchUserProgress } from 'backend/userProgress.jsw';
+import { fetchUserProgress } from 'backend/userProgress';
 
 const CDN_CATALOG_URL = "https://cdn.invicto.com.co/icfes/general/icfes_exam.json";
 
