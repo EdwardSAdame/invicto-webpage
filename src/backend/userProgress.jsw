@@ -1,3 +1,4 @@
+// src/backend/userProgress.jsw
 import { fetch } from 'wix-fetch';
 
 export async function fetchUserProgress(userId) {
