@@ -11,9 +11,13 @@ $w.onReady(function () {
     $w('#componentRepeater').onItemReady(($item, itemData) => {
         if (!itemData.componentId) return;
         
-        $item('#componentTitle').text = itemData.componentTitle || "Titulo no disponible";
+        // --- UPDATED: Appended 'ICFES | ' to the title ---
+        $item('#componentTitle').text = itemData.componentTitle ? `ICFES | ${itemData.componentTitle}` : "Titulo no disponible";
+        
         $item('#componentDescription').text = itemData.componentDescription || "Descripcion no disponible";
-        $item('#componentStats').text = `${itemData.questionCount || 0} Preguntas • ${itemData.timeLimitMinutes || 0} Minutos`;
+        
+        // --- UPDATED: Replaced bullet with a comma ---
+        $item('#componentStats').text = `${itemData.questionCount || 0} Preguntas, ${itemData.timeLimitMinutes || 0} Minutos`;
 
         let imageUrl = itemData.componentImage;
         if (!imageUrl || imageUrl.includes("...")) {
