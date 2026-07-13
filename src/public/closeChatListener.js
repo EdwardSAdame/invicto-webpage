@@ -3,7 +3,8 @@ import wixWindow from 'wix-window';
 export function setupCloseChatListener($w) {
   const isDesktop = wixWindow.formFactor === "Desktop";
 
-  $w('#chatUi1').on('closeChat', () => {
+  // Updated the selector from '#chatUi1' to '#chatUi' to match the dynamic page implementation
+  $w('#chatUi').on('closeChat', () => {
     $w('#chatContainer').collapse();
     $w('#testContainer').expand();
     
