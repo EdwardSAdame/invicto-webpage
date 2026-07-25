@@ -1,9 +1,11 @@
-// PAGE CODE: /roma
 import wixWindow from 'wix-window'; 
+import { session } from 'wix-storage-frontend';
 import { RomaLayoutManager } from 'public/RomaLayoutManager';
 
 /** @type {RomaLayoutManager} */
 let layoutManager; 
+
+const ACTIVE_VIEW_KEY = 'romaActiveView';
 
 $w.onReady(async function () {
 
@@ -32,6 +34,18 @@ $w.onReady(async function () {
     });
 
     layoutManager.init();
+    restoreViewState();
+
+    function restoreViewState() {
+        const savedView = session.getItem(ACTIVE_VIEW_KEY);
+        if (savedView === 'quiz') {
+            activateQuizView();
+        } else if (savedView === 'mentalMap') {
+            activateMentalMapView();
+        } else if (savedView === 'flashcards') {
+            activateFlashcardsView();
+        }
+    }
 
     function activateQuizView() {
         if (!$docContainer.collapsed) {
@@ -39,6 +53,7 @@ $w.onReady(async function () {
             $docFrame.postMessage(""); 
         }
         layoutManager.setDuoMode(); 
+        session.setItem(ACTIVE_VIEW_KEY, 'quiz');
     }
 
     function activateMentalMapView() {
@@ -47,6 +62,7 @@ $w.onReady(async function () {
             $docFrame.postMessage(""); 
         }
         layoutManager.setMentalMapMode(); 
+        session.setItem(ACTIVE_VIEW_KEY, 'mentalMap');
     }
 
     function activateFlashcardsView() {
@@ -55,6 +71,7 @@ $w.onReady(async function () {
             $docFrame.postMessage(""); 
         }
         layoutManager.setFlashcardsMode(); 
+        session.setItem(ACTIVE_VIEW_KEY, 'flashcards');
     }
 
     function activateDocumentView(url) {
@@ -63,12 +80,14 @@ $w.onReady(async function () {
         $docFrame.postMessage(secureUrl);
         $docContainer.expand();
         layoutManager.setDocumentLayout();
+        session.setItem(ACTIVE_VIEW_KEY, 'document');
     }
 
     function resetToSoloMode() {
         $docContainer.collapse();
         $docFrame.postMessage(""); 
         layoutManager.setSoloMode();
+        session.removeItem(ACTIVE_VIEW_KEY);
     }
 
     if (chatWidget) {
@@ -98,7 +117,6 @@ $w.onReady(async function () {
             }
         });
 
-        // Catches the background image stream chunks
         chatWidget.on('flashcardsImageAvailable', (eventOrData) => {
             const imagePayload = eventOrData.data || eventOrData;
             activateFlashcardsView();
@@ -107,7 +125,6 @@ $w.onReady(async function () {
             }
         });
 
-        // Catches the individual flashcards as they stream in
         chatWidget.on('flashcardStreamItem', (eventOrData) => {
             const cardPayload = eventOrData.data || eventOrData;
             activateFlashcardsView();
@@ -247,11 +264,9 @@ $w.onReady(async function () {
             });
         }
 
-        // NEW: Listen for the generated prompt from the Flashcards Widget
         flashcardsWidget.on('postMessageToChat', (event) => {
             const promptText = event.data.text;
             if (chatWidget && typeof chatWidget.sendMessage === 'function') {
-                // Ensure UI is ready for new stream, then fire message
                 activateFlashcardsView();
                 if (typeof flashcardsWidget.startLoading === 'function') {
                     flashcardsWidget.startLoading();
