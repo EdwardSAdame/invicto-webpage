@@ -6,6 +6,7 @@ import { RomaLayoutManager } from 'public/RomaLayoutManager';
 let layoutManager; 
 
 const ACTIVE_VIEW_KEY = 'romaActiveView';
+const DOC_URL_KEY = 'romaDocUrl';
 
 $w.onReady(async function () {
 
@@ -44,6 +45,11 @@ $w.onReady(async function () {
             activateMentalMapView();
         } else if (savedView === 'flashcards') {
             activateFlashcardsView();
+        } else if (savedView === 'document') {
+            const savedUrl = session.getItem(DOC_URL_KEY);
+            if (savedUrl) {
+                activateDocumentView(savedUrl);
+            }
         }
     }
 
@@ -80,14 +86,18 @@ $w.onReady(async function () {
         $docFrame.postMessage(secureUrl);
         $docContainer.expand();
         layoutManager.setDocumentLayout();
+        
         session.setItem(ACTIVE_VIEW_KEY, 'document');
+        session.setItem(DOC_URL_KEY, url);
     }
 
     function resetToSoloMode() {
         $docContainer.collapse();
         $docFrame.postMessage(""); 
         layoutManager.setSoloMode();
+        
         session.removeItem(ACTIVE_VIEW_KEY);
+        session.removeItem(DOC_URL_KEY);
     }
 
     if (chatWidget) {
