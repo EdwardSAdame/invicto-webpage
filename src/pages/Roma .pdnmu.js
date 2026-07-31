@@ -2,6 +2,9 @@ import wixWindow from 'wix-window';
 import { session } from 'wix-storage-frontend';
 import { RomaLayoutManager } from 'public/RomaLayoutManager';
 
+// Step 1: Import the newly created document viewer service
+import { handleDocumentView } from 'public/services/documentViewer.js';
+
 /** @type {RomaLayoutManager} */
 let layoutManager; 
 
@@ -80,15 +83,9 @@ $w.onReady(async function () {
         session.setItem(ACTIVE_VIEW_KEY, 'flashcards');
     }
 
+    // Step 2: Delegate logic to the external service
     function activateDocumentView(url) {
-        let secureUrl = url.startsWith('http') ? url : `https://${url}`;
-        secureUrl += "#toolbar=0&navpanes=0&scrollbar=0";
-        $docFrame.postMessage(secureUrl);
-        $docContainer.expand();
-        layoutManager.setDocumentLayout();
-        
-        session.setItem(ACTIVE_VIEW_KEY, 'document');
-        session.setItem(DOC_URL_KEY, url);
+        handleDocumentView($w, url, layoutManager);
     }
 
     function resetToSoloMode() {
