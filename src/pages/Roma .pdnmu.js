@@ -2,7 +2,6 @@ import wixWindow from 'wix-window';
 import { session } from 'wix-storage-frontend';
 import { RomaLayoutManager } from 'public/RomaLayoutManager';
 
-// Step 1: Import the newly created document viewer service
 import { handleDocumentView } from 'public/services/documentViewer.js';
 
 /** @type {RomaLayoutManager} */
@@ -83,7 +82,6 @@ $w.onReady(async function () {
         session.setItem(ACTIVE_VIEW_KEY, 'flashcards');
     }
 
-    // Step 2: Delegate logic to the external service
     function activateDocumentView(url) {
         handleDocumentView($w, url, layoutManager);
     }
@@ -169,6 +167,14 @@ $w.onReady(async function () {
             activateMentalMapView(); 
             if (mentalMapWidget && typeof mentalMapWidget.renderMap === 'function') {
                 mentalMapWidget.renderMap(mapPayload);
+            }
+        });
+
+        chatWidget.on('quizStreamGroupStart', (eventOrData) => {
+            const chunkData = eventOrData.data || eventOrData;
+            activateQuizView(); 
+            if (quizWidget && typeof quizWidget.streamGroupStart === 'function') {
+                quizWidget.streamGroupStart(chunkData);
             }
         });
 
