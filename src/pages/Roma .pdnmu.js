@@ -1,7 +1,6 @@
 import wixWindow from 'wix-window'; 
 import { session } from 'wix-storage-frontend';
 import { RomaLayoutManager } from 'public/RomaLayoutManager';
-
 import { handleDocumentView } from 'public/services/documentViewer.js';
 
 /** @type {RomaLayoutManager} */
@@ -9,6 +8,19 @@ let layoutManager;
 
 const ACTIVE_VIEW_KEY = 'romaActiveView';
 const DOC_URL_KEY = 'romaDocUrl';
+
+// --- Safe Event Binding Helper ---
+// Prioritizes strict Wix Blocks API methods (e.g., onQuizStreamGroupStart) over generic .on() wrappers.
+function bindWidgetEvent(widget, eventName, handler) {
+    if (!widget) return;
+    const camelCaseName = 'on' + eventName.charAt(0).toUpperCase() + eventName.slice(1);
+    
+    if (typeof widget[camelCaseName] === 'function') {
+        widget[camelCaseName](handler);
+    } else if (typeof widget.on === 'function') {
+        widget.on(eventName, handler);
+    }
+}
 
 $w.onReady(async function () {
 
@@ -96,26 +108,25 @@ $w.onReady(async function () {
     }
 
     if (chatWidget) {
-        chatWidget.on('quizMode', () => {
+        bindWidgetEvent(chatWidget, 'quizMode', () => {
             activateQuizView(); 
             if (quizWidget && typeof quizWidget.initQuizLoading === 'function') {
                 quizWidget.initQuizLoading();
             }
         });
 
-        chatWidget.on('mentalMapMode', () => {
+        bindWidgetEvent(chatWidget, 'mentalMapMode', () => {
             activateMentalMapView(); 
         });
 
-        chatWidget.on('flashcardsMode', () => {
+        bindWidgetEvent(chatWidget, 'flashcardsMode', () => {
             activateFlashcardsView(); 
             if (flashcardsWidget && typeof flashcardsWidget.startLoading === 'function') {
                 flashcardsWidget.startLoading();
             }
         });
 
-        // FIX: Extracting .detail from the event to ensure payloads cross the widget bridge safely
-        chatWidget.on('flashcardsDataAvailable', (event) => {
+        bindWidgetEvent(chatWidget, 'flashcardsDataAvailable', (event) => {
             const flashcardsPayload = event.detail || event.data || event;
             activateFlashcardsView();
             if (flashcardsWidget && typeof flashcardsWidget.loadFlashcards === 'function') {
@@ -123,7 +134,7 @@ $w.onReady(async function () {
             }
         });
 
-        chatWidget.on('flashcardsImageAvailable', (event) => {
+        bindWidgetEvent(chatWidget, 'flashcardsImageAvailable', (event) => {
             const imagePayload = event.detail || event.data || event;
             activateFlashcardsView();
             if (flashcardsWidget && typeof flashcardsWidget.streamBackgroundImage === 'function') {
@@ -131,7 +142,7 @@ $w.onReady(async function () {
             }
         });
 
-        chatWidget.on('flashcardStreamItem', (event) => {
+        bindWidgetEvent(chatWidget, 'flashcardStreamItem', (event) => {
             const cardPayload = event.detail || event.data || event;
             activateFlashcardsView();
             if (flashcardsWidget && typeof flashcardsWidget.streamFlashcardItem === 'function') {
@@ -139,7 +150,7 @@ $w.onReady(async function () {
             }
         });
 
-        chatWidget.on('quizDataAvailable', (event) => {
+        bindWidgetEvent(chatWidget, 'quizDataAvailable', (event) => {
             const quizPayload = event.detail || event.data || event;
             activateQuizView(); 
             if (quizWidget && typeof quizWidget.renderQuiz === 'function') {
@@ -147,7 +158,7 @@ $w.onReady(async function () {
             }
         });
 
-        chatWidget.on('mindMapStreamNode', (event) => {
+        bindWidgetEvent(chatWidget, 'mindMapStreamNode', (event) => {
             const nodePayload = event.detail || event.data || event;
             activateMentalMapView(); 
             if (mentalMapWidget && typeof mentalMapWidget.appendStreamedNode === 'function') {
@@ -155,7 +166,7 @@ $w.onReady(async function () {
             }
         });
 
-        chatWidget.on('mindMapStreamEdge', (event) => {
+        bindWidgetEvent(chatWidget, 'mindMapStreamEdge', (event) => {
             const edgePayload = event.detail || event.data || event;
             activateMentalMapView(); 
             if (mentalMapWidget && typeof mentalMapWidget.appendStreamedEdge === 'function') {
@@ -163,7 +174,7 @@ $w.onReady(async function () {
             }
         });
 
-        chatWidget.on('openMindMap', (event) => {
+        bindWidgetEvent(chatWidget, 'openMindMap', (event) => {
             const mapPayload = event.detail || event.data || event;
             activateMentalMapView(); 
             if (mentalMapWidget && typeof mentalMapWidget.renderMap === 'function') {
@@ -171,7 +182,7 @@ $w.onReady(async function () {
             }
         });
 
-        chatWidget.on('quizStreamGroupStart', (event) => {
+        bindWidgetEvent(chatWidget, 'quizStreamGroupStart', (event) => {
             const chunkData = event.detail || event.data || event;
             activateQuizView(); 
             if (quizWidget && typeof quizWidget.streamGroupStart === 'function') {
@@ -179,7 +190,7 @@ $w.onReady(async function () {
             }
         });
 
-        chatWidget.on('quizStreamItem', (event) => {
+        bindWidgetEvent(chatWidget, 'quizStreamItem', (event) => {
             const chunkData = event.detail || event.data || event;
             activateQuizView(); 
             if (quizWidget && typeof quizWidget.streamQuestion === 'function') {
@@ -187,7 +198,7 @@ $w.onReady(async function () {
             }
         });
 
-        chatWidget.on('quizStreamImage', (event) => {
+        bindWidgetEvent(chatWidget, 'quizStreamImage', (event) => {
             const chunkData = event.detail || event.data || event;
             activateQuizView(); 
             if (quizWidget && typeof quizWidget.streamImage === 'function') {
@@ -195,7 +206,7 @@ $w.onReady(async function () {
             }
         });
 
-        chatWidget.on('openDocument', (event) => {
+        bindWidgetEvent(chatWidget, 'openDocument', (event) => {
             const pdfUrl = event.detail || event.data || event;
             if (pdfUrl && typeof pdfUrl === 'string') {
                 activateDocumentView(pdfUrl); 
@@ -210,25 +221,19 @@ $w.onReady(async function () {
     }
 
     if (quizWidget) {
-        if (typeof quizWidget.onCloseRequested === 'function') {
-            quizWidget.onCloseRequested(() => {
-                resetToSoloMode();
-            });
-        } else if (typeof quizWidget.on === 'function') {
-            quizWidget.on('onCloseRequested', () => {
-                resetToSoloMode();
-            });
-        }
+        bindWidgetEvent(quizWidget, 'onCloseRequested', () => {
+            resetToSoloMode();
+        });
 
-        quizWidget.on('postMessageToChat', (event) => {
-            const promptText = event.data.text;
+        bindWidgetEvent(quizWidget, 'postMessageToChat', (event) => {
+            const promptText = event.detail?.text || event.data?.text || event.text;
             if (chatWidget && typeof chatWidget.sendMessage === 'function') {
                 chatWidget.sendMessage(promptText);
             }
         });
 
-        quizWidget.on('postHiddenMessageToChat', (event) => {
-            const contextText = event.data.text;
+        bindWidgetEvent(quizWidget, 'postHiddenMessageToChat', (event) => {
+            const contextText = event.detail?.text || event.data?.text || event.text;
             if (chatWidget && typeof chatWidget.sendHiddenMessage === 'function') {
                 chatWidget.sendHiddenMessage(contextText);
             } 
@@ -236,18 +241,12 @@ $w.onReady(async function () {
     }
 
     if (mentalMapWidget) {
-        if (typeof mentalMapWidget.onCloseRequested === 'function') {
-            mentalMapWidget.onCloseRequested(() => {
-                resetToSoloMode();
-            });
-        } else if (typeof mentalMapWidget.on === 'function') {
-            mentalMapWidget.on('onCloseRequested', () => {
-                resetToSoloMode();
-            });
-        }
+        bindWidgetEvent(mentalMapWidget, 'onCloseRequested', () => {
+            resetToSoloMode();
+        });
 
-        mentalMapWidget.on('onNodeExplored', (event) => {
-            const clickedLabel = event.data.label;
+        bindWidgetEvent(mentalMapWidget, 'onNodeExplored', (event) => {
+            const clickedLabel = event.detail?.label || event.data?.label || event.label;
             if (!clickedLabel) return;
 
             if (chatWidget && typeof chatWidget.exploreMindmapNode === 'function') {
@@ -262,24 +261,12 @@ $w.onReady(async function () {
     }
 
     if (flashcardsWidget) {
-        if (typeof flashcardsWidget.onCloseRequested === 'function') {
-            flashcardsWidget.onCloseRequested(() => {
-                resetToSoloMode();
-            });
-        } 
-        else if (typeof flashcardsWidget.on === 'function') {
-            flashcardsWidget.on('onCloseRequested', () => {
-                resetToSoloMode();
-            });
-        } 
-        else if (typeof flashcardsWidget.onOnCloseRequested === 'function') {
-            flashcardsWidget.onOnCloseRequested(() => {
-                resetToSoloMode();
-            });
-        }
+        bindWidgetEvent(flashcardsWidget, 'onCloseRequested', () => {
+            resetToSoloMode();
+        });
 
-        flashcardsWidget.on('postMessageToChat', (event) => {
-            const promptText = event.data.text;
+        bindWidgetEvent(flashcardsWidget, 'postMessageToChat', (event) => {
+            const promptText = event.detail?.text || event.data?.text || event.text;
             if (chatWidget && typeof chatWidget.sendMessage === 'function') {
                 activateFlashcardsView();
                 if (typeof flashcardsWidget.startLoading === 'function') {
