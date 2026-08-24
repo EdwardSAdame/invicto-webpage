@@ -114,88 +114,89 @@ $w.onReady(async function () {
             }
         });
 
-        chatWidget.on('flashcardsDataAvailable', (eventOrData) => {
-            const flashcardsPayload = eventOrData.data || eventOrData;
+        // FIX: Extracting .detail from the event to ensure payloads cross the widget bridge safely
+        chatWidget.on('flashcardsDataAvailable', (event) => {
+            const flashcardsPayload = event.detail || event.data || event;
             activateFlashcardsView();
             if (flashcardsWidget && typeof flashcardsWidget.loadFlashcards === 'function') {
                 flashcardsWidget.loadFlashcards(flashcardsPayload);
             }
         });
 
-        chatWidget.on('flashcardsImageAvailable', (eventOrData) => {
-            const imagePayload = eventOrData.data || eventOrData;
+        chatWidget.on('flashcardsImageAvailable', (event) => {
+            const imagePayload = event.detail || event.data || event;
             activateFlashcardsView();
             if (flashcardsWidget && typeof flashcardsWidget.streamBackgroundImage === 'function') {
                 flashcardsWidget.streamBackgroundImage(imagePayload);
             }
         });
 
-        chatWidget.on('flashcardStreamItem', (eventOrData) => {
-            const cardPayload = eventOrData.data || eventOrData;
+        chatWidget.on('flashcardStreamItem', (event) => {
+            const cardPayload = event.detail || event.data || event;
             activateFlashcardsView();
             if (flashcardsWidget && typeof flashcardsWidget.streamFlashcardItem === 'function') {
                 flashcardsWidget.streamFlashcardItem(cardPayload);
             }
         });
 
-        chatWidget.on('quizDataAvailable', (eventOrData) => {
-            const quizPayload = eventOrData.data || eventOrData;
+        chatWidget.on('quizDataAvailable', (event) => {
+            const quizPayload = event.detail || event.data || event;
             activateQuizView(); 
             if (quizWidget && typeof quizWidget.renderQuiz === 'function') {
                 quizWidget.renderQuiz(quizPayload);
             }
         });
 
-        chatWidget.on('mindMapStreamNode', (eventOrData) => {
-            const nodePayload = eventOrData.data || eventOrData;
+        chatWidget.on('mindMapStreamNode', (event) => {
+            const nodePayload = event.detail || event.data || event;
             activateMentalMapView(); 
             if (mentalMapWidget && typeof mentalMapWidget.appendStreamedNode === 'function') {
                 mentalMapWidget.appendStreamedNode(nodePayload);
             }
         });
 
-        chatWidget.on('mindMapStreamEdge', (eventOrData) => {
-            const edgePayload = eventOrData.data || eventOrData;
+        chatWidget.on('mindMapStreamEdge', (event) => {
+            const edgePayload = event.detail || event.data || event;
             activateMentalMapView(); 
             if (mentalMapWidget && typeof mentalMapWidget.appendStreamedEdge === 'function') {
                 mentalMapWidget.appendStreamedEdge(edgePayload);
             }
         });
 
-        chatWidget.on('openMindMap', (eventOrData) => {
-            const mapPayload = eventOrData.data || eventOrData;
+        chatWidget.on('openMindMap', (event) => {
+            const mapPayload = event.detail || event.data || event;
             activateMentalMapView(); 
             if (mentalMapWidget && typeof mentalMapWidget.renderMap === 'function') {
                 mentalMapWidget.renderMap(mapPayload);
             }
         });
 
-        chatWidget.on('quizStreamGroupStart', (eventOrData) => {
-            const chunkData = eventOrData.data || eventOrData;
+        chatWidget.on('quizStreamGroupStart', (event) => {
+            const chunkData = event.detail || event.data || event;
             activateQuizView(); 
             if (quizWidget && typeof quizWidget.streamGroupStart === 'function') {
                 quizWidget.streamGroupStart(chunkData);
             }
         });
 
-        chatWidget.on('quizStreamItem', (eventOrData) => {
-            const chunkData = eventOrData.data || eventOrData;
+        chatWidget.on('quizStreamItem', (event) => {
+            const chunkData = event.detail || event.data || event;
             activateQuizView(); 
             if (quizWidget && typeof quizWidget.streamQuestion === 'function') {
                 quizWidget.streamQuestion(chunkData);
             }
         });
 
-        chatWidget.on('quizStreamImage', (eventOrData) => {
-            const chunkData = eventOrData.data || eventOrData;
+        chatWidget.on('quizStreamImage', (event) => {
+            const chunkData = event.detail || event.data || event;
             activateQuizView(); 
             if (quizWidget && typeof quizWidget.streamImage === 'function') {
                 quizWidget.streamImage(chunkData);
             }
         });
 
-        chatWidget.on('openDocument', (eventOrData) => {
-            const pdfUrl = eventOrData.data || eventOrData;
+        chatWidget.on('openDocument', (event) => {
+            const pdfUrl = event.detail || event.data || event;
             if (pdfUrl && typeof pdfUrl === 'string') {
                 activateDocumentView(pdfUrl); 
             }
