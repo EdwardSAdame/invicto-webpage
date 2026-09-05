@@ -2,7 +2,7 @@ import wixWindow from 'wix-window';
 import { setupChatToggle } from 'public/chatToggle.js';
 import { setupCloseChatListener } from 'public/closeChatListener.js';
 
-$w.onReady(function () {
+$w.onReady(async function () {
     const isDesktop = wixWindow.formFactor === "Desktop";
 
     // Widget References
@@ -11,13 +11,13 @@ $w.onReady(function () {
 
     // 1. Initial Page Load State
     if (isDesktop) {
-        $w('#chatContainer').expand();
-        $w('#leftMarginSpacer').collapse();
-        $w('#rightMarginSpacer').collapse();
+        await $w('#chatContainer').expand();
+        await $w('#leftMarginSpacer').collapse();
+        await $w('#rightMarginSpacer').collapse();
     } else {
-        $w('#chatContainer').collapse();
-        $w('#leftMarginSpacer').collapse();
-        $w('#rightMarginSpacer').collapse();
+        await $w('#chatContainer').collapse();
+        await $w('#leftMarginSpacer').collapse();
+        await $w('#rightMarginSpacer').collapse();
     }
 
     // 2. Initialize Event Listeners
