@@ -1,30 +1,19 @@
-import wixWindow from 'wix-window';
 import { setupChatToggle } from 'public/chatToggle.js';
 import { setupCloseChatListener } from 'public/closeChatListener.js';
 
 $w.onReady(async function () {
-    const isDesktop = wixWindow.formFactor === "Desktop";
-
     // Widget References
     const chatWidget = $w('#chatUi'); 
     const staticExamWidget = $w('#staticExamUi'); 
 
-    // 1. Initial Page Load State
-    if (isDesktop) {
-        await $w('#chatContainer').expand();
-        await $w('#leftMarginSpacer').collapse();
-        await $w('#rightMarginSpacer').collapse();
-    } else {
-        await $w('#chatContainer').collapse();
-        await $w('#leftMarginSpacer').collapse();
-        await $w('#rightMarginSpacer').collapse();
-    }
+    // 1. Establish initial state sequentially to avoid race conditions
+    await $w('#chatContainer').expand();
 
-    // 2. Initialize Event Listeners
+    // 2. Bind event listeners only after the DOM is ready
     setupChatToggle($w);
     setupCloseChatListener($w);
 
-    // 3. Exam to Chat Bridge (with safety check for .on())
+    // 3. Exam to Chat Bridge
     if (staticExamWidget && typeof staticExamWidget.on === 'function') {
         staticExamWidget.on('postHiddenMessageToChat', (event) => {
             const contextText = event.data.text;
