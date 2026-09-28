@@ -40,8 +40,9 @@ $w.onReady(function () {
         const prefix = "simulacro-icfes"; 
         const uniqueToken = Date.now().toString();
         
+        // The target URL construction now safely encodes the absolute URL passed as the examId.
         const targetUrl = `/${prefix}/${itemData.componentId}` + 
-                          `?examId=${itemData.examId}` +
+                          `?examId=${encodeURIComponent(itemData.examId || "")}` +
                           `&title=${encodeURIComponent(itemData.componentTitle || "")}` +
                           `&qCount=${itemData.questionCount || 0}` +
                           `&time=${itemData.timeLimitMinutes || 0}` +
