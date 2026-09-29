@@ -56,8 +56,12 @@ $w.onReady(function () {
             if ($item('#paywallOverlay')) {
                 $item('#paywallOverlay').expand();
             }
+            
+            $item('#startExamButton').label = "Desbloquear";
             finalTargetUrl = PAYWALL_URL;
         } else {
+            $item('#startExamButton').label = "Saber más"; 
+            
             const prefix = "simulacro-icfes"; 
             const uniqueToken = Date.now().toString();
             
@@ -101,7 +105,7 @@ async function loadPageSafely() {
         $w('#componentRepeater').data = randomizedCatalog;
 
     } catch (error) {
-        // Silenced for production
+        console.error("Initialization Error:", error);
     }
 }
 
@@ -121,7 +125,7 @@ async function fetchUserProgressAndStatus() {
                 isPremiumUser = activeOrders.length > 0;
             }
         } catch (planError) {
-            // Silenced for production
+            console.error("Plan Check Error:", planError);
         }
 
         const progressResponse = await fetchUserProgress(member._id);
@@ -129,13 +133,12 @@ async function fetchUserProgressAndStatus() {
         if (progressResponse && progressResponse.ok && progressResponse.progress) {
             progressResponse.progress.forEach(item => {
                 
-                // Backwards Compatibility: Match legacy IDs (math_vol_01.json) to new absolute URLs
+                // Backwards Compatibility: Match legacy IDs to new absolute URLs
                 const catalogMatch = globalCatalog.find(ex => 
                     ex.examId === item.ExamId || ex.examId.endsWith(`/${item.ExamId}`)
                 );
 
                 if (catalogMatch) {
-                    // Normalize the map key to the absolute URL
                     progressMap[catalogMatch.examId] = item;
                     completedComponents.add(catalogMatch.componentId);
                 } else {
@@ -144,7 +147,7 @@ async function fetchUserProgressAndStatus() {
             });
         }
     } catch (error) {
-        // Silenced for production
+        console.error("Progress Fetch Error:", error);
     }
 }
 
