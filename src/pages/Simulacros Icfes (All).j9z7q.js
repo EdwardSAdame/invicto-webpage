@@ -1,11 +1,17 @@
 import { fetch } from 'wix-fetch';
 import wixLocationFrontend from 'wix-location-frontend';
 import { currentMember } from 'wix-members-frontend';
+import { orders } from 'wix-pricing-plans-frontend';
 import { fetchUserProgress } from 'backend/userProgress.jsw';
 
 const CDN_CATALOG_URL = "https://cdn.invicto.com.co/icfes/general/icfes_exam.json";
+const PAYWALL_URL = "https://www.invicto.com.co/pricing-plans/planes-precios";
 
+// Global State Management
+let globalCatalog = [];
 let progressMap = {};
+let completedComponents = new Set();
+let isPremiumUser = false;
 
 $w.onReady(function () {
     $w('#componentRepeater').onItemReady(($item, itemData) => {
@@ -23,7 +29,12 @@ $w.onReady(function () {
 
         $item('#textScore').collapse();
         $item('#textTime').collapse();
+        
+        if ($item('#paywallOverlay')) {
+            $item('#paywallOverlay').collapse();
+        }
 
+        // 1. Render Specific Exam Progress
         const userProgress = progressMap[itemData.examId];
 
         if (userProgress) {
@@ -37,27 +48,38 @@ $w.onReady(function () {
             $item('#textTime').expand();
         }
 
-        const prefix = "simulacro-icfes"; 
-        const uniqueToken = Date.now().toString();
+        // 2. Evaluate Paywall State
+        const isComponentLocked = completedComponents.has(itemData.componentId) && !isPremiumUser;
+        let finalTargetUrl = "";
+
+        if (isComponentLocked) {
+            if ($item('#paywallOverlay')) {
+                $item('#paywallOverlay').expand();
+            }
+            finalTargetUrl = PAYWALL_URL;
+        } else {
+            const prefix = "simulacro-icfes"; 
+            const uniqueToken = Date.now().toString();
+            
+            finalTargetUrl = `/${prefix}/${itemData.componentId}` + 
+                             `?examId=${encodeURIComponent(itemData.examId || "")}` +
+                             `&title=${encodeURIComponent(itemData.componentTitle || "")}` +
+                             `&qCount=${itemData.questionCount || 0}` +
+                             `&time=${itemData.timeLimitMinutes || 0}` +
+                             `&img=${encodeURIComponent(imageUrl)}` +
+                             `&reset=${uniqueToken}`;
+        }
         
-        // The target URL construction now safely encodes the absolute URL passed as the examId.
-        const targetUrl = `/${prefix}/${itemData.componentId}` + 
-                          `?examId=${encodeURIComponent(itemData.examId || "")}` +
-                          `&title=${encodeURIComponent(itemData.componentTitle || "")}` +
-                          `&qCount=${itemData.questionCount || 0}` +
-                          `&time=${itemData.timeLimitMinutes || 0}` +
-                          `&img=${encodeURIComponent(imageUrl)}` +
-                          `&reset=${uniqueToken}`;
-        
-        $item('#startExamButton').link = targetUrl;
+        // 3. Bind Final Routing
+        $item('#startExamButton').link = finalTargetUrl;
         $item('#startExamButton').target = "_self"; 
         
-        $item('#componentImage').link = targetUrl;
+        $item('#componentImage').link = finalTargetUrl;
         $item('#componentImage').target = "_self";
 
         const box8 = $item('#box8');
         if (box8 && typeof box8.onClick === 'function') {
-            box8.onClick(() => wixLocationFrontend.to(targetUrl));
+            box8.onClick(() => wixLocationFrontend.to(finalTargetUrl));
         }
     });
 
@@ -71,20 +93,19 @@ async function loadPageSafely() {
         if (!response.ok) throw new Error(`Error CDN: ${response.status}`);
         
         const responseData = await response.json();
-        const catalog = responseData.catalog || [];
+        globalCatalog = responseData.catalog || [];
 
-        const randomizedCatalog = processAndRandomizeCatalog(catalog);
-        
+        await fetchUserProgressAndStatus();
+
+        const randomizedCatalog = processAndRandomizeCatalog(globalCatalog);
         $w('#componentRepeater').data = randomizedCatalog;
-
-        fetchAndApplyUserProgress();
 
     } catch (error) {
         // Silenced for production
     }
 }
 
-async function fetchAndApplyUserProgress() {
+async function fetchUserProgressAndStatus() {
     try {
         const member = await currentMember.getMember();
         
@@ -92,25 +113,33 @@ async function fetchAndApplyUserProgress() {
             return;
         }
 
+        // Check Premium Status
+        try {
+            const ordersList = await orders.listCurrentMemberOrders();
+            if (ordersList && ordersList.length > 0) {
+                const activeOrders = ordersList.filter(order => order.status === 'ACTIVE');
+                isPremiumUser = activeOrders.length > 0;
+            }
+        } catch (planError) {
+            // Silenced for production
+        }
+
         const progressResponse = await fetchUserProgress(member._id);
 
         if (progressResponse && progressResponse.ok && progressResponse.progress) {
             progressResponse.progress.forEach(item => {
-                progressMap[item.ExamId] = item;
-            });
+                
+                // Backwards Compatibility: Match legacy IDs (math_vol_01.json) to new absolute URLs
+                const catalogMatch = globalCatalog.find(ex => 
+                    ex.examId === item.ExamId || ex.examId.endsWith(`/${item.ExamId}`)
+                );
 
-            $w('#componentRepeater').forEachItem(($item, itemData) => {
-                const userProgress = progressMap[itemData.examId];
-
-                if (userProgress) {
-                    $item('#textScore').text = `${userProgress.TotalScore}/100`;
-                    
-                    const minutes = Math.floor(userProgress.TimeUsedSeconds / 60);
-                    const seconds = Math.round(userProgress.TimeUsedSeconds % 60);
-                    $item('#textTime').text = `${minutes}m ${seconds}s`;
-                    
-                    $item('#textScore').expand();
-                    $item('#textTime').expand();
+                if (catalogMatch) {
+                    // Normalize the map key to the absolute URL
+                    progressMap[catalogMatch.examId] = item;
+                    completedComponents.add(catalogMatch.componentId);
+                } else {
+                    progressMap[item.ExamId] = item;
                 }
             });
         }
