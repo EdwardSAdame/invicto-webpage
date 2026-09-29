@@ -85,6 +85,12 @@ $w.onReady(function () {
         if (box8 && typeof box8.onClick === 'function') {
             box8.onClick(() => wixLocationFrontend.to(finalTargetUrl));
         }
+
+        // Bind the overlay container directly to intercept clicks and route to the final URL
+        const paywallOverlay = $item('#paywallOverlay');
+        if (paywallOverlay && typeof paywallOverlay.onClick === 'function') {
+            paywallOverlay.onClick(() => wixLocationFrontend.to(finalTargetUrl));
+        }
     });
 
     loadPageSafely();
