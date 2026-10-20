@@ -62,7 +62,7 @@ $w.onReady(function () {
             $item('#startExamButton').label = "Desbloquear";
             finalTargetUrl = PAYWALL_URL;
         } else {
-            $item('#startExamButton').label = "Saber más";
+            $item('#startExamButton').label = "Saber mas";
 
             const prefix = "simulacro-icfes";
             const uniqueToken = Date.now().toString();
@@ -76,7 +76,7 @@ $w.onReady(function () {
                              `&reset=${uniqueToken}`;
         }
 
-        // 3. Bind Final Routing
+        // 3. Bind Routing Actions
         $item('#startExamButton').link = finalTargetUrl;
         $item('#startExamButton').target = "_self";
 
@@ -108,7 +108,7 @@ async function loadPageSafely() {
         const response = await fetch(CDN_CATALOG_URL, { method: 'GET' });
 
         if (!response.ok) {
-            throw new Error(`Error CDN: ${response.status}`);
+            throw new Error(`CDN Error: ${response.status}`);
         }
 
         const responseData = await response.json();
@@ -119,7 +119,6 @@ async function loadPageSafely() {
         const sortedCatalog = processAndSortCatalog(globalCatalog);
         $w('#componentRepeater').data = sortedCatalog;
 
-        // Transition from loading state to content display
         if ($w('#loadingVisualizer')) {
             $w('#loadingVisualizer').collapse();
         }
@@ -158,7 +157,7 @@ async function fetchUserProgressAndStatus() {
         if (progressResponse && progressResponse.ok && progressResponse.progress) {
             progressResponse.progress.forEach(item => {
                 const catalogMatch = globalCatalog.find(ex =>
-                    ex.examId === item.ExamId || ex.examId.endsWith(`/${item.ExamId}`)
+                    ex.examId === item.ExamId || String(ex.examId || '').endsWith(`/${item.ExamId}`)
                 );
 
                 if (catalogMatch) {
@@ -176,7 +175,7 @@ async function fetchUserProgressAndStatus() {
 
 function processAndSortCatalog(catalog) {
     const groupedExams = {};
-    
+
     catalog.forEach(exam => {
         const compId = exam.componentId || "unknown";
         if (!groupedExams[compId]) {
@@ -186,10 +185,10 @@ function processAndSortCatalog(catalog) {
     });
 
     const finalSelection = [];
-    
+
     for (const compId in groupedExams) {
         const examsArray = groupedExams[compId];
-        
+
         examsArray.sort((a, b) => {
             const idA = String(a.examId || "");
             const idB = String(b.examId || "");
@@ -204,14 +203,14 @@ function processAndSortCatalog(catalog) {
             }
         }
 
-        const baseId = selectedExam.examId || selectedExam.componentId || "fallback";
+        const baseId = selectedExam.examId || selectedExam.componentId || "item";
         const safeId = String(baseId).replace(/[^a-zA-Z0-9-]/g, '-');
-        
+
         finalSelection.push({
             ...selectedExam,
             _id: safeId
         });
     }
-    
+
     return finalSelection;
 }
