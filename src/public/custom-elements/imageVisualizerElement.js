@@ -1,12 +1,10 @@
 // src/public/custom-elements/imageVisualizerElement.js
-/* global HTMLElement, customElements, document, ResizeObserver */
 // @ts-nocheck
 
-class ImageVisualizer extends HTMLElement {
+class ImageVisualizer extends globalThis.HTMLElement {
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
-        this.resizeObserver = null;
     }
 
     static get observedAttributes() {
@@ -22,82 +20,16 @@ class ImageVisualizer extends HTMLElement {
     connectedCallback() {
         this.render();
         this.updateStyles();
-
-        const container = this.shadowRoot.querySelector('.loader-container');
-
-        // Dynamically rebuild the matrix if the element changes size
-        this.resizeObserver = new ResizeObserver(entries => {
-            for (let entry of entries) {
-                const { width, height } = entry.contentRect;
-                if (width > 0 && height > 0) {
-                    this.buildMatrix(container, width, height);
-                }
-            }
-        });
-
-        this.resizeObserver.observe(this);
-    }
-
-    disconnectedCallback() {
-        if (this.resizeObserver) {
-            this.resizeObserver.disconnect();
-        }
     }
 
     updateStyles() {
-        const maxSize = this.getAttribute('max-size') || '100vw';
-        const duration = this.getAttribute('duration') || '4s';
+        const maxSize = this.getAttribute('max-size') || '600px';
+        const duration = this.getAttribute('duration') || '3s';
+        const rgbColor = this.getAttribute('rgb-color') || '255, 255, 255';
 
         this.style.setProperty('--max-size', maxSize);
         this.style.setProperty('--anim-duration', duration);
-    }
-
-    buildMatrix(container, width, height) {
-        // Clear old grid when resizing
-        container.innerHTML = '';
-
-        const dotSize = 3;  // Updated to 3px for luxury feel
-        const gap = 20;     // Updated to 20px gap for spacing
-        const totalCellSize = dotSize + gap;
-
-        // Use Math.floor so the dots don't overflow the container bounds
-        const cols = Math.floor(width / totalCellSize);
-        const rows = Math.floor(height / totalCellSize);
-
-        if (cols === 0 || rows === 0) return;
-
-        container.style.gridTemplateColumns = `repeat(${cols}, ${dotSize}px)`;
-        container.style.gridTemplateRows = `repeat(${rows}, ${dotSize}px)`;
-
-        const centerX = cols / 2;
-        const centerY = rows / 2;
-
-        // DocumentFragment is used to inject all dots at once for better performance
-        const fragment = document.createDocumentFragment();
-
-        for (let r = 0; r < rows; r++) {
-            for (let c = 0; c < cols; c++) {
-                const dot = document.createElement('div');
-                dot.classList.add('dot');
-
-                // 1. Rainbow Spectrum
-                const hue = cols > 1 ? (c / (cols - 1)) * 360 : 0;
-                dot.style.backgroundColor = `hsl(${hue}, 90%, 50%)`;
-
-                // 2. Oceanic Breathing Wave
-                const distX = c - centerX;
-                const distY = r - centerY;
-                const distance = Math.sqrt(distX * distX + distY * distY);
-
-                // Negative delay starts animation instantly
-                const delay = -(distance * 0.15);
-                dot.style.animationDelay = `${delay}s`;
-
-                fragment.appendChild(dot);
-            }
-        }
-
-        container.appendChild(fragment);
+        this.style.setProperty('--rgb-color', rgbColor);
     }
 
     render() {
@@ -109,57 +41,95 @@ class ImageVisualizer extends HTMLElement {
                 align-items: center;
                 width: 100%;
                 height: 100%;
-                background-color: #ffffff; /* Explicitly solid white */
+                background-color: transparent; 
                 overflow: hidden;
 
-                --max-size: 100vw;
-                --anim-duration: 4s;
+                --max-size: 600px;
+                --anim-duration: 3s;
+                --rgb-color: 255, 255, 255;
             }
 
             .loader-container {
                 position: relative;
+                aspect-ratio: 5 / 3;
                 width: 100%;
-                height: 100%;
                 max-width: var(--max-size);
-                display: grid;
-                gap: 20px; /* Matched the luxury spacing */
-                align-content: center;
+                display: flex;
                 justify-content: center;
-                overflow: hidden;
+                align-items: center;
             }
 
-            .dot {
-                width: 3px; /* Tiny 3px dot size */
-                height: 3px;
+            .cloud-core {
+                position: absolute;
+                width: 40px;
+                height: 40px;
+                background: rgb(var(--rgb-color));
                 border-radius: 50%;
-                
-                opacity: 0.1;
-                transform: scale(0.3);
-                
-                /* Uses the duration variable passed from attributes */
-                animation: oceanic-breathe var(--anim-duration) infinite ease-in-out;
+                filter: blur(8px);
+                animation: core-breath 2s ease-in-out infinite;
+                z-index: 10;
                 will-change: transform, opacity;
             }
 
-            @keyframes oceanic-breathe {
+            .cloud-wave {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                width: var(--max-size);
+                height: var(--max-size);
+                background: radial-gradient(circle, rgba(var(--rgb-color), 0.8) 0%, rgba(var(--rgb-color), 0) 70%);
+                border-radius: 50%;
+                filter: blur(8px);
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.02);
+                animation: spectrum-expand var(--anim-duration) cubic-bezier(0.1, 0.4, 0.2, 1) infinite;
+                will-change: transform, opacity;
+                pointer-events: none;
+            }
+
+            .cloud-wave:nth-child(2) { animation-delay: 0s; }
+            .cloud-wave:nth-child(3) { animation-delay: calc(var(--anim-duration) / 3); }
+            .cloud-wave:nth-child(4) { animation-delay: calc(var(--anim-duration) * 2 / 3); }
+
+            @keyframes core-breath {
                 0%, 100% {
-                    opacity: 0.1;
-                    transform: scale(0.3);
+                    transform: scale(0.8);
+                    opacity: 0.6;
                 }
                 50% {
+                    transform: scale(1.4);
                     opacity: 1;
-                    transform: scale(1);
+                }
+            }
+
+            @keyframes spectrum-expand {
+                0% {
+                    transform: translate(-50%, -50%) scale(0.02);
+                    opacity: 0.8;
+                }
+                100% {
+                    transform: translate(-50%, -50%) scale(1);
+                    opacity: 0;
                 }
             }
         `;
 
-        this.shadowRoot.innerHTML = `
-            <div class="loader-container"></div>
+        const container = document.createElement('div');
+        container.className = 'loader-container';
+        
+        container.innerHTML = `
+            <div class="cloud-core"></div>
+            <div class="cloud-wave"></div>
+            <div class="cloud-wave"></div>
+            <div class="cloud-wave"></div>
         `;
+
+        this.shadowRoot.innerHTML = ''; 
         this.shadowRoot.appendChild(style);
+        this.shadowRoot.appendChild(container);
     }
 }
 
-if (!customElements.get('image-visualizer')) {
-    customElements.define('image-visualizer', ImageVisualizer);
+if (!globalThis.customElements.get('image-visualizer')) {
+    globalThis.customElements.define('image-visualizer', ImageVisualizer);
 }
