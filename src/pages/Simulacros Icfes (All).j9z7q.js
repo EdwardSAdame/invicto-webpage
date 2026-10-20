@@ -101,6 +101,18 @@ function initializePageState() {
     if ($w('#loadingVisualizer')) {
         $w('#loadingVisualizer').expand();
     }
+    if ($w('#animatedText1')) {
+        $w('#animatedText1').expand();
+    }
+}
+
+function hideLoaders() {
+    if ($w('#loadingVisualizer')) {
+        $w('#loadingVisualizer').collapse();
+    }
+    if ($w('#animatedText1')) {
+        $w('#animatedText1').collapse();
+    }
 }
 
 async function loadPageSafely() {
@@ -119,18 +131,15 @@ async function loadPageSafely() {
         const sortedCatalog = processAndSortCatalog(globalCatalog);
         $w('#componentRepeater').data = sortedCatalog;
 
-        if ($w('#loadingVisualizer')) {
-            $w('#loadingVisualizer').collapse();
-        }
+        hideLoaders();
+
         if ($w('#componentRepeater')) {
             $w('#componentRepeater').expand();
         }
 
     } catch (error) {
         console.error("Initialization Error:", error);
-        if ($w('#loadingVisualizer')) {
-            $w('#loadingVisualizer').collapse();
-        }
+        hideLoaders();
     }
 }
 
