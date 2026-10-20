@@ -101,9 +101,6 @@ function initializePageState() {
     if ($w('#loadingVisualizer')) {
         $w('#loadingVisualizer').expand();
     }
-    if ($w('#componentRepeater')) {
-        $w('#componentRepeater').collapse();
-    }
 }
 
 async function loadPageSafely() {
@@ -119,8 +116,8 @@ async function loadPageSafely() {
 
         await fetchUserProgressAndStatus();
 
-        const randomizedCatalog = processAndRandomizeCatalog(globalCatalog);
-        $w('#componentRepeater').data = randomizedCatalog;
+        const sortedCatalog = processAndSortCatalog(globalCatalog);
+        $w('#componentRepeater').data = sortedCatalog;
 
         // Transition from loading state to content display
         if ($w('#loadingVisualizer')) {
@@ -177,8 +174,10 @@ async function fetchUserProgressAndStatus() {
     }
 }
 
-function processAndRandomizeCatalog(catalog) {
+function processAndSortCatalog(catalog) {
     const groupedExams = {};
+    
+    // 1. Group the catalog by componentId
     catalog.forEach(exam => {
         if (!groupedExams[exam.componentId]) {
             groupedExams[exam.componentId] = [];
@@ -187,15 +186,28 @@ function processAndRandomizeCatalog(catalog) {
     });
 
     const finalSelection = [];
+    
     for (const componentId in groupedExams) {
         const examsArray = groupedExams[componentId];
-        const randomIndex = Math.floor(Math.random() * examsArray.length);
-        const selectedExam = examsArray[randomIndex];
+        
+        // 2. Sort deterministically by examId to ensure consistent sequential order
+        examsArray.sort((a, b) => a.examId.localeCompare(b.examId));
 
+        // 3. Select the first incomplete exam in the sequence
+        let selectedExam = examsArray[0];
+        for (const exam of examsArray) {
+            if (!progressMap[exam.examId]) {
+                selectedExam = exam;
+                break;
+            }
+        }
+
+        // 4. Assign a deterministic UI identifier instead of Math.random()
         finalSelection.push({
             ...selectedExam,
-            _id: `${selectedExam.componentId}_${Math.random().toString(36).substring(2, 9)}`
+            _id: selectedExam.examId.replace(/[^a-zA-Z0-9]/g, '_')
         });
     }
+    
     return finalSelection;
 }
