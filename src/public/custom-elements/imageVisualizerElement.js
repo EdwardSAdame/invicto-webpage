@@ -1,7 +1,8 @@
 // src/public/custom-elements/imageVisualizerElement.js
+/* global HTMLElement, customElements */
 // @ts-nocheck
 
-class ImageVisualizer extends globalThis.HTMLElement {
+class ImageVisualizer extends HTMLElement {
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
@@ -33,103 +34,101 @@ class ImageVisualizer extends globalThis.HTMLElement {
     }
 
     render() {
-        const style = document.createElement('style');
-        style.textContent = `
-            :host {
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                width: 100%;
-                height: 100%;
-                background-color: transparent; 
-                overflow: hidden;
+        const style = `
+            <style>
+                :host {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    width: 100%;
+                    height: 100%;
+                    background-color: transparent; 
+                    overflow: hidden;
 
-                --max-size: 600px;
-                --anim-duration: 3s;
-                --rgb-color: 255, 255, 255;
-            }
-
-            .loader-container {
-                position: relative;
-                aspect-ratio: 5 / 3;
-                width: 100%;
-                max-width: var(--max-size);
-                display: flex;
-                justify-content: center;
-                align-items: center;
-            }
-
-            .cloud-core {
-                position: absolute;
-                width: 40px;
-                height: 40px;
-                background: rgb(var(--rgb-color));
-                border-radius: 50%;
-                filter: blur(8px);
-                animation: core-breath 2s ease-in-out infinite;
-                z-index: 10;
-                will-change: transform, opacity;
-            }
-
-            .cloud-wave {
-                position: absolute;
-                top: 50%;
-                left: 50%;
-                width: var(--max-size);
-                height: var(--max-size);
-                background: radial-gradient(circle, rgba(var(--rgb-color), 0.8) 0%, rgba(var(--rgb-color), 0) 70%);
-                border-radius: 50%;
-                filter: blur(8px);
-                opacity: 0;
-                transform: translate(-50%, -50%) scale(0.02);
-                animation: spectrum-expand var(--anim-duration) cubic-bezier(0.1, 0.4, 0.2, 1) infinite;
-                will-change: transform, opacity;
-                pointer-events: none;
-            }
-
-            .cloud-wave:nth-child(2) { animation-delay: 0s; }
-            .cloud-wave:nth-child(3) { animation-delay: calc(var(--anim-duration) / 3); }
-            .cloud-wave:nth-child(4) { animation-delay: calc(var(--anim-duration) * 2 / 3); }
-
-            @keyframes core-breath {
-                0%, 100% {
-                    transform: scale(0.8);
-                    opacity: 0.6;
+                    --max-size: 600px;
+                    --anim-duration: 3s;
+                    --rgb-color: 255, 255, 255;
                 }
-                50% {
-                    transform: scale(1.4);
-                    opacity: 1;
-                }
-            }
 
-            @keyframes spectrum-expand {
-                0% {
-                    transform: translate(-50%, -50%) scale(0.02);
-                    opacity: 0.8;
+                .loader-container {
+                    position: relative;
+                    aspect-ratio: 5 / 3;
+                    width: 100%;
+                    max-width: var(--max-size);
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
                 }
-                100% {
-                    transform: translate(-50%, -50%) scale(1);
+
+                .cloud-core {
+                    position: absolute;
+                    width: 40px;
+                    height: 40px;
+                    background: rgb(var(--rgb-color));
+                    border-radius: 50%;
+                    filter: blur(8px);
+                    animation: core-breath 2s ease-in-out infinite;
+                    z-index: 10;
+                    will-change: transform, opacity;
+                }
+
+                .cloud-wave {
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    width: var(--max-size);
+                    height: var(--max-size);
+                    background: radial-gradient(circle, rgba(var(--rgb-color), 0.8) 0%, rgba(var(--rgb-color), 0) 70%);
+                    border-radius: 50%;
+                    filter: blur(8px);
                     opacity: 0;
+                    transform: translate(-50%, -50%) scale(0.02);
+                    animation: spectrum-expand var(--anim-duration) cubic-bezier(0.1, 0.4, 0.2, 1) infinite;
+                    will-change: transform, opacity;
+                    pointer-events: none;
                 }
-            }
+
+                .cloud-wave:nth-child(2) { animation-delay: 0s; }
+                .cloud-wave:nth-child(3) { animation-delay: calc(var(--anim-duration) / 3); }
+                .cloud-wave:nth-child(4) { animation-delay: calc(var(--anim-duration) * 2 / 3); }
+
+                @keyframes core-breath {
+                    0%, 100% {
+                        transform: scale(0.8);
+                        opacity: 0.6;
+                    }
+                    50% {
+                        transform: scale(1.4);
+                        opacity: 1;
+                    }
+                }
+
+                @keyframes spectrum-expand {
+                    0% {
+                        transform: translate(-50%, -50%) scale(0.02);
+                        opacity: 0.8;
+                    }
+                    100% {
+                        transform: translate(-50%, -50%) scale(1);
+                        opacity: 0;
+                    }
+                }
+            </style>
         `;
 
-        const container = document.createElement('div');
-        container.className = 'loader-container';
-        
-        container.innerHTML = `
-            <div class="cloud-core"></div>
-            <div class="cloud-wave"></div>
-            <div class="cloud-wave"></div>
-            <div class="cloud-wave"></div>
+        const html = `
+            <div class="loader-container">
+                <div class="cloud-core"></div>
+                <div class="cloud-wave"></div>
+                <div class="cloud-wave"></div>
+                <div class="cloud-wave"></div>
+            </div>
         `;
 
-        this.shadowRoot.innerHTML = ''; 
-        this.shadowRoot.appendChild(style);
-        this.shadowRoot.appendChild(container);
+        this.shadowRoot.innerHTML = style + html;
     }
 }
 
-if (!globalThis.customElements.get('image-visualizer')) {
-    globalThis.customElements.define('image-visualizer', ImageVisualizer);
+if (!customElements.get('image-visualizer')) {
+    customElements.define('image-visualizer', ImageVisualizer);
 }
