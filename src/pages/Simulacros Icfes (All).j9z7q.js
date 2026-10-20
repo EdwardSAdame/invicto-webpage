@@ -97,6 +97,7 @@ $w.onReady(function () {
     loadPageSafely();
 });
 
+// Single Responsibility: UI Loading Phase
 function initializePageState() {
     if ($w('#loadingVisualizer')) {
         $w('#loadingVisualizer').expand();
@@ -104,17 +105,38 @@ function initializePageState() {
     if ($w('#animatedText1')) {
         $w('#animatedText1').expand();
     }
+    if ($w('#descriptionFlexbox')) {
+        $w('#descriptionFlexbox').collapse();
+    }
 }
 
-function hideLoaders() {
+// Single Responsibility: UI Content Phase
+function renderContentState() {
     if ($w('#loadingVisualizer')) {
         $w('#loadingVisualizer').collapse();
     }
     if ($w('#animatedText1')) {
         $w('#animatedText1').collapse();
     }
+    if ($w('#descriptionFlexbox')) {
+        $w('#descriptionFlexbox').expand();
+    }
 }
 
+// Single Responsibility: UI Error Phase
+function handleErrorState() {
+    if ($w('#loadingVisualizer')) {
+        $w('#loadingVisualizer').collapse();
+    }
+    if ($w('#animatedText1')) {
+        $w('#animatedText1').collapse();
+    }
+    if ($w('#descriptionFlexbox')) {
+        $w('#descriptionFlexbox').collapse();
+    }
+}
+
+// Single Responsibility: Data Fetching and Assignment
 async function loadPageSafely() {
     try {
         const response = await fetch(CDN_CATALOG_URL, { method: 'GET' });
@@ -131,7 +153,7 @@ async function loadPageSafely() {
         const sortedCatalog = processAndSortCatalog(globalCatalog);
         $w('#componentRepeater').data = sortedCatalog;
 
-        hideLoaders();
+        renderContentState();
 
         if ($w('#componentRepeater')) {
             $w('#componentRepeater').expand();
@@ -139,7 +161,7 @@ async function loadPageSafely() {
 
     } catch (error) {
         console.error("Initialization Error:", error);
-        hideLoaders();
+        handleErrorState();
     }
 }
 
