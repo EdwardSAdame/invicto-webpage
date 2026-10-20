@@ -10,7 +10,6 @@ class ImageVisualizer extends HTMLElement {
     }
 
     static get observedAttributes() {
-        // Kept your original attributes to maintain compatibility with your app
         return ['max-size', 'duration', 'rgb-color'];
     }
 
@@ -57,8 +56,8 @@ class ImageVisualizer extends HTMLElement {
         // Clear old grid when resizing
         container.innerHTML = '';
 
-        const dotSize = 6;
-        const gap = 8;
+        const dotSize = 3;  // Updated to 3px for luxury feel
+        const gap = 20;     // Updated to 20px gap for spacing
         const totalCellSize = dotSize + gap;
 
         // Use Math.floor so the dots don't overflow the container bounds
@@ -110,7 +109,7 @@ class ImageVisualizer extends HTMLElement {
                 align-items: center;
                 width: 100%;
                 height: 100%;
-                background-color: transparent; 
+                background-color: #ffffff; /* Explicitly solid white */
                 overflow: hidden;
 
                 --max-size: 100vw;
@@ -123,15 +122,15 @@ class ImageVisualizer extends HTMLElement {
                 height: 100%;
                 max-width: var(--max-size);
                 display: grid;
-                gap: 8px;
+                gap: 20px; /* Matched the luxury spacing */
                 align-content: center;
                 justify-content: center;
                 overflow: hidden;
             }
 
             .dot {
-                width: 6px;
-                height: 6px;
+                width: 3px; /* Tiny 3px dot size */
+                height: 3px;
                 border-radius: 50%;
                 
                 opacity: 0.1;
