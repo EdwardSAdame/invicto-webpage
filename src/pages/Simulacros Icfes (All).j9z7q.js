@@ -14,22 +14,24 @@ let completedComponents = new Set();
 let isPremiumUser = false;
 
 $w.onReady(function () {
+    initializePageState();
+
     $w('#componentRepeater').onItemReady(($item, itemData) => {
         if (!itemData.componentId) return;
-        
+
         $item('#componentTitle').text = itemData.componentTitle ? `ICFES | ${itemData.componentTitle}` : "Titulo no disponible";
         $item('#componentDescription').text = itemData.componentDescription || "Descripcion no disponible";
         $item('#componentStats').text = `${itemData.questionCount || 0} Preguntas, ${itemData.timeLimitMinutes || 0} Minutos`;
 
         let imageUrl = itemData.componentImage;
         if (!imageUrl || imageUrl.includes("...")) {
-            imageUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/No_image_available.svg/300px-No_image_available.svg.png"; 
+            imageUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/No_image_available.svg/300px-No_image_available.svg.png";
         }
         $item('#componentImage').src = imageUrl;
 
         $item('#textScore').collapse();
         $item('#textTime').collapse();
-        
+
         if ($item('#paywallOverlay')) {
             $item('#paywallOverlay').collapse();
         }
@@ -39,11 +41,11 @@ $w.onReady(function () {
 
         if (userProgress) {
             $item('#textScore').text = `${userProgress.TotalScore}/100`;
-            
+
             const minutes = Math.floor(userProgress.TimeUsedSeconds / 60);
             const seconds = Math.round(userProgress.TimeUsedSeconds % 60);
             $item('#textTime').text = `${minutes}m ${seconds}s`;
-            
+
             $item('#textScore').expand();
             $item('#textTime').expand();
         }
@@ -56,16 +58,16 @@ $w.onReady(function () {
             if ($item('#paywallOverlay')) {
                 $item('#paywallOverlay').expand();
             }
-            
+
             $item('#startExamButton').label = "Desbloquear";
             finalTargetUrl = PAYWALL_URL;
         } else {
-            $item('#startExamButton').label = "Saber más"; 
-            
-            const prefix = "simulacro-icfes"; 
+            $item('#startExamButton').label = "Saber más";
+
+            const prefix = "simulacro-icfes";
             const uniqueToken = Date.now().toString();
-            
-            finalTargetUrl = `/${prefix}/${itemData.componentId}` + 
+
+            finalTargetUrl = `/${prefix}/${itemData.componentId}` +
                              `?examId=${encodeURIComponent(itemData.examId || "")}` +
                              `&title=${encodeURIComponent(itemData.componentTitle || "")}` +
                              `&qCount=${itemData.questionCount || 0}` +
@@ -73,11 +75,11 @@ $w.onReady(function () {
                              `&img=${encodeURIComponent(imageUrl)}` +
                              `&reset=${uniqueToken}`;
         }
-        
+
         // 3. Bind Final Routing
         $item('#startExamButton').link = finalTargetUrl;
-        $item('#startExamButton').target = "_self"; 
-        
+        $item('#startExamButton').target = "_self";
+
         $item('#componentImage').link = finalTargetUrl;
         $item('#componentImage').target = "_self";
 
@@ -86,7 +88,6 @@ $w.onReady(function () {
             box8.onClick(() => wixLocationFrontend.to(finalTargetUrl));
         }
 
-        // Bind the overlay container directly to intercept clicks and route to the final URL
         const paywallOverlay = $item('#paywallOverlay');
         if (paywallOverlay && typeof paywallOverlay.onClick === 'function') {
             paywallOverlay.onClick(() => wixLocationFrontend.to(finalTargetUrl));
@@ -96,12 +97,23 @@ $w.onReady(function () {
     loadPageSafely();
 });
 
+function initializePageState() {
+    if ($w('#loadingVisualizer')) {
+        $w('#loadingVisualizer').expand();
+    }
+    if ($w('#componentRepeater')) {
+        $w('#componentRepeater').collapse();
+    }
+}
+
 async function loadPageSafely() {
     try {
         const response = await fetch(CDN_CATALOG_URL, { method: 'GET' });
-        
-        if (!response.ok) throw new Error(`Error CDN: ${response.status}`);
-        
+
+        if (!response.ok) {
+            throw new Error(`Error CDN: ${response.status}`);
+        }
+
         const responseData = await response.json();
         globalCatalog = responseData.catalog || [];
 
@@ -110,20 +122,30 @@ async function loadPageSafely() {
         const randomizedCatalog = processAndRandomizeCatalog(globalCatalog);
         $w('#componentRepeater').data = randomizedCatalog;
 
+        // Transition from loading state to content display
+        if ($w('#loadingVisualizer')) {
+            $w('#loadingVisualizer').collapse();
+        }
+        if ($w('#componentRepeater')) {
+            $w('#componentRepeater').expand();
+        }
+
     } catch (error) {
         console.error("Initialization Error:", error);
+        if ($w('#loadingVisualizer')) {
+            $w('#loadingVisualizer').collapse();
+        }
     }
 }
 
 async function fetchUserProgressAndStatus() {
     try {
         const member = await currentMember.getMember();
-        
+
         if (!member || !member._id) {
             return;
         }
 
-        // Check Premium Status
         try {
             const ordersList = await orders.listCurrentMemberOrders();
             if (ordersList && ordersList.length > 0) {
@@ -138,9 +160,7 @@ async function fetchUserProgressAndStatus() {
 
         if (progressResponse && progressResponse.ok && progressResponse.progress) {
             progressResponse.progress.forEach(item => {
-                
-                // Backwards Compatibility: Match legacy IDs to new absolute URLs
-                const catalogMatch = globalCatalog.find(ex => 
+                const catalogMatch = globalCatalog.find(ex =>
                     ex.examId === item.ExamId || ex.examId.endsWith(`/${item.ExamId}`)
                 );
 
@@ -160,7 +180,9 @@ async function fetchUserProgressAndStatus() {
 function processAndRandomizeCatalog(catalog) {
     const groupedExams = {};
     catalog.forEach(exam => {
-        if (!groupedExams[exam.componentId]) groupedExams[exam.componentId] = [];
+        if (!groupedExams[exam.componentId]) {
+            groupedExams[exam.componentId] = [];
+        }
         groupedExams[exam.componentId].push(exam);
     });
 
@@ -172,7 +194,7 @@ function processAndRandomizeCatalog(catalog) {
 
         finalSelection.push({
             ...selectedExam,
-            _id: `${selectedExam.componentId}_${Math.random().toString(36).substring(2, 9)}` 
+            _id: `${selectedExam.componentId}_${Math.random().toString(36).substring(2, 9)}`
         });
     }
     return finalSelection;
