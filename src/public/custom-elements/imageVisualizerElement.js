@@ -1,7 +1,8 @@
 // src/public/custom-elements/imageVisualizerElement.js
+/* global HTMLElement, customElements, document */
 // @ts-nocheck
 
-class ImageVisualizer extends globalThis.HTMLElement {
+class ImageVisualizer extends HTMLElement {
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
@@ -130,6 +131,6 @@ class ImageVisualizer extends globalThis.HTMLElement {
     }
 }
 
-if (!globalThis.customElements.get('image-visualizer')) {
-    globalThis.customElements.define('image-visualizer', ImageVisualizer);
+if (!customElements.get('image-visualizer')) {
+    customElements.define('image-visualizer', ImageVisualizer);
 }
