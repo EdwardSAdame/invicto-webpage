@@ -150,8 +150,8 @@ async function loadPageSafely() {
 
         await fetchUserProgressAndStatus();
 
-        const sortedCatalog = processAndSortCatalog(globalCatalog);
-        $w('#componentRepeater').data = sortedCatalog;
+        const randomizedCatalog = processAndRandomizeCatalog(globalCatalog);
+        $w('#componentRepeater').data = randomizedCatalog;
 
         renderContentState();
 
@@ -204,7 +204,7 @@ async function fetchUserProgressAndStatus() {
     }
 }
 
-function processAndSortCatalog(catalog) {
+function processAndRandomizeCatalog(catalog) {
     const groupedExams = {};
 
     catalog.forEach(exam => {
@@ -220,26 +220,16 @@ function processAndSortCatalog(catalog) {
     for (const compId in groupedExams) {
         const examsArray = groupedExams[compId];
 
-        examsArray.sort((a, b) => {
-            const idA = String(a.examId || "");
-            const idB = String(b.examId || "");
-            return idA.localeCompare(idB);
-        });
-
-        let selectedExam = examsArray[0];
-        for (const exam of examsArray) {
-            if (exam.examId && !progressMap[exam.examId]) {
-                selectedExam = exam;
-                break;
-            }
-        }
+        const randomIndex = Math.floor(Math.random() * examsArray.length);
+        const selectedExam = examsArray[randomIndex];
 
         const baseId = selectedExam.examId || selectedExam.componentId || "item";
-        const safeId = String(baseId).replace(/[^a-zA-Z0-9-]/g, '-');
+        const cleanId = String(baseId).replace(/[^a-zA-Z0-9-]/g, '-');
+        const randomHash = Math.random().toString(36).substring(2, 9);
 
         finalSelection.push({
             ...selectedExam,
-            _id: safeId
+            _id: `${cleanId}-${randomHash}`
         });
     }
 
