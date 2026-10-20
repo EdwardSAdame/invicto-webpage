@@ -177,35 +177,39 @@ async function fetchUserProgressAndStatus() {
 function processAndSortCatalog(catalog) {
     const groupedExams = {};
     
-    // 1. Group the catalog by componentId
     catalog.forEach(exam => {
-        if (!groupedExams[exam.componentId]) {
-            groupedExams[exam.componentId] = [];
+        const compId = exam.componentId || "unknown";
+        if (!groupedExams[compId]) {
+            groupedExams[compId] = [];
         }
-        groupedExams[exam.componentId].push(exam);
+        groupedExams[compId].push(exam);
     });
 
     const finalSelection = [];
     
-    for (const componentId in groupedExams) {
-        const examsArray = groupedExams[componentId];
+    for (const compId in groupedExams) {
+        const examsArray = groupedExams[compId];
         
-        // 2. Sort deterministically by examId to ensure consistent sequential order
-        examsArray.sort((a, b) => a.examId.localeCompare(b.examId));
+        examsArray.sort((a, b) => {
+            const idA = String(a.examId || "");
+            const idB = String(b.examId || "");
+            return idA.localeCompare(idB);
+        });
 
-        // 3. Select the first incomplete exam in the sequence
         let selectedExam = examsArray[0];
         for (const exam of examsArray) {
-            if (!progressMap[exam.examId]) {
+            if (exam.examId && !progressMap[exam.examId]) {
                 selectedExam = exam;
                 break;
             }
         }
 
-        // 4. Assign a deterministic UI identifier instead of Math.random()
+        const baseId = selectedExam.examId || selectedExam.componentId || "fallback";
+        const safeId = String(baseId).replace(/[^a-zA-Z0-9-]/g, '-');
+        
         finalSelection.push({
             ...selectedExam,
-            _id: selectedExam.examId.replace(/[^a-zA-Z0-9]/g, '_')
+            _id: safeId
         });
     }
     
