@@ -9,7 +9,8 @@ class ImageVisualizer extends HTMLElement {
     }
 
     static get observedAttributes() {
-        return ['max-size', 'duration', 'rgb-color'];
+        // Added 'bg-color' to the list of attributes to watch
+        return ['max-size', 'duration', 'rgb-color', 'bg-color'];
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
@@ -26,11 +27,17 @@ class ImageVisualizer extends HTMLElement {
     updateStyles() {
         const maxSize = this.getAttribute('max-size') || '600px';
         const duration = this.getAttribute('duration') || '3s';
+        
+        // Controls the wave/cloud color (Must be comma-separated RGB values, e.g., "255, 0, 0")
         const rgbColor = this.getAttribute('rgb-color') || '255, 255, 255';
+        
+        // Controls the background color (Can be hex "#000", named "black", or rgba)
+        const bgColor = this.getAttribute('bg-color') || 'transparent';
 
         this.style.setProperty('--max-size', maxSize);
         this.style.setProperty('--anim-duration', duration);
         this.style.setProperty('--rgb-color', rgbColor);
+        this.style.setProperty('--bg-color', bgColor);
     }
 
     render() {
@@ -42,12 +49,14 @@ class ImageVisualizer extends HTMLElement {
                     align-items: center;
                     width: 100%;
                     height: 100%;
-                    background-color: transparent; 
+                    /* Now uses the CSS variable for the background */
+                    background-color: var(--bg-color); 
                     overflow: hidden;
 
                     --max-size: 600px;
                     --anim-duration: 3s;
                     --rgb-color: 255, 255, 255;
+                    --bg-color: transparent;
                 }
 
                 .loader-container {
