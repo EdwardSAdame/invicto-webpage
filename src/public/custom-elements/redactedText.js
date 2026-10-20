@@ -1,6 +1,5 @@
 // src/public/custom-elements/redactedText.js
 /* global HTMLElement, customElements, document */
-// @ts-nocheck
 
 class RedactedText extends HTMLElement {
     constructor() {
@@ -9,13 +8,15 @@ class RedactedText extends HTMLElement {
     }
 
     static get observedAttributes() {
-        return ['text', 'pulse-speed', 'bg-color', 'text-color', 'revealed'];
+        return ['text', 'pulse-speed', 'bg-color', 'text-color', 'revealed', 'lines'];
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
         if (oldValue !== newValue) {
             if (name === 'text') {
                 this.updateText();
+            } else if (name === 'lines') {
+                this.renderSkeletonLines();
             } else {
                 this.updateStyles();
             }
@@ -26,6 +27,7 @@ class RedactedText extends HTMLElement {
         this.render();
         this.updateStyles();
         this.updateText();
+        this.renderSkeletonLines();
     }
 
     updateText() {
@@ -45,53 +47,82 @@ class RedactedText extends HTMLElement {
         this.style.setProperty('--text-color', textColor);
     }
 
+    renderSkeletonLines() {
+        const wrapper = this.shadowRoot.querySelector('.skeleton-wrapper');
+        if (!wrapper) return;
+
+        wrapper.innerHTML = '';
+        
+        const linesCount = parseInt(this.getAttribute('lines'), 10) || 2;
+
+        for (let i = 0; i < linesCount; i++) {
+            const line = document.createElement('div');
+            line.className = 'skeleton-line';
+            
+            if (i === linesCount - 1 && linesCount > 1) {
+                line.classList.add('short');
+            }
+            wrapper.appendChild(line);
+        }
+    }
+
     render() {
         const style = document.createElement('style');
         style.textContent = `
             :host {
                 display: block;
                 width: 100%;
-                height: 100%;
                 overflow: hidden;
-                border-radius: 0px;
-                
+
                 --pulse-speed: 1.5s;
                 --bg-color: #ffffff;
                 --text-color: #1d1d1f;
+                --line-height: 1.2em;
+                --gap: 8px;
             }
 
-            .redacted-container {
+            .container {
                 position: relative;
-                display: flex;
-                align-items: center;
                 width: 100%;
-                height: 100%;
+            }
+
+            .skeleton-wrapper {
+                display: flex;
+                flex-direction: column;
+                gap: var(--gap);
+                width: 100%;
+            }
+
+            .skeleton-line {
+                height: var(--line-height);
+                width: 100%;
                 background-color: var(--bg-color);
                 animation: redacted-pulse var(--pulse-speed) infinite ease-in-out;
-                transition: background-color 0.4s ease;
+                border-radius: 0px;
+            }
+
+            .skeleton-line.short {
+                width: 65%;
             }
 
             .text-content {
-                position: relative;
-                z-index: 1;
+                display: none;
                 color: var(--text-color);
                 font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
                 font-size: inherit;
                 font-weight: 600;
                 width: 100%;
-                padding: 0 8px;
+                user-select: none;
                 opacity: 0;
                 transition: opacity 0.5s ease-in;
-                user-select: none;
             }
 
-            /* State transition when text is revealed */
-            :host([revealed="true"]) .redacted-container {
-                animation: none;
-                background-color: transparent;
+            :host([revealed="true"]) .skeleton-wrapper {
+                display: none;
             }
 
             :host([revealed="true"]) .text-content {
+                display: block;
                 opacity: 1;
             }
 
@@ -103,11 +134,15 @@ class RedactedText extends HTMLElement {
         `;
 
         const container = document.createElement('div');
-        container.className = 'redacted-container';
+        container.className = 'container';
 
-        const textSpan = document.createElement('span');
+        const skeletonWrapper = document.createElement('div');
+        skeletonWrapper.className = 'skeleton-wrapper';
+
+        const textSpan = document.createElement('div');
         textSpan.className = 'text-content';
 
+        container.appendChild(skeletonWrapper);
         container.appendChild(textSpan);
 
         this.shadowRoot.innerHTML = '';
