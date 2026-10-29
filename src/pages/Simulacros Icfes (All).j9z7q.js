@@ -62,7 +62,7 @@ $w.onReady(function () {
             $item('#startExamButton').label = "Desbloquear";
             finalTargetUrl = PAYWALL_URL;
         } else {
-            $item('#startExamButton').label = "Saber mas";
+            $item('#startExamButton').label = "Empezar";
 
             const prefix = "simulacro-icfes";
             const uniqueToken = Date.now().toString();
