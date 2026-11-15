@@ -63,7 +63,8 @@ $w.onReady(function () {
             $item('#startExamButton').label = "Desbloquear";
             finalTargetUrl = PAYWALL_URL;
         } else {
-            $item('#startExamButton').label = "Empezar";
+            // SEO FIX: Appends the subject title dynamically (e.g., "Empezar Matemáticas")
+            $item('#startExamButton').label = "Empezar " + (itemData.componentTitle || "");
 
             const prefix = "simulacro-icfes";
             const uniqueToken = Date.now().toString();
