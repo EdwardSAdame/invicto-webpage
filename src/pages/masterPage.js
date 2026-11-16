@@ -1,7 +1,20 @@
 // src/pages/masterPage.js
+import wixSeo from 'wix-seo';
 
 $w.onReady(function () {
     
+    // Preload the Roma video poster image globally to eliminate the LCP resource load delay
+    wixSeo.setLinks([
+        {
+            rel: 'preload',
+            as: 'image',
+            href: 'https://static.wixstatic.com/media/11062b_7cdacca63f9249c7ad1f953ab46a23d3f000.png/v1/fill/w_160,h_135,al_c,q_85,usm_0.33_1.00_0.00,enc_avif,quality_auto/11062b_7cdacca63f9249c7ad1f953ab46a23d3f000.png'
+        }
+    ])
+    .catch((error) => {
+        console.error("Failed to set preload link:", error);
+    });
+
     // @ts-ignore - Bypasses Velo's cache if the new ID hasn't registered in the dictionary yet
     const aiButton = $w('#aiCustomButton');
 
