@@ -1,10 +1,237 @@
-// API Reference: https://www.wix.com/velo/reference/api-overview/introduction
-// “Hello, World!” Example: https://learn-code.wix.com/en/article/hello-world
+import { fetch } from 'wix-fetch';
+import wixLocationFrontend from 'wix-location-frontend';
+import { currentMember } from 'wix-members-frontend';
+import { orders } from 'wix-pricing-plans-frontend';
+import { fetchUserProgress } from 'backend/userProgress.jsw';
+
+const CDN_CATALOG_URL = "https://cdn.invicto.com.co/unal/general/unal_exam.json";
+const PAYWALL_URL = "https://www.invicto.com.co/pricing-plans/planes-precios";
+const ROUTE_PREFIX = "simulacro-unal";
+
+// Global State Management
+let globalCatalog = [];
+let progressMap = {};
+let completedComponents = new Set();
+let isPremiumUser = false;
 
 $w.onReady(function () {
-    // Write your JavaScript here
+    initializePageState();
 
-    // To select an element by ID use: $w('#elementID')
+    $w('#componentRepeater').onItemReady(($item, itemData) => {
+        if (!itemData.componentId) return;
 
-    // Click 'Preview' to run your code
+        $item('#componentTitle').text = itemData.componentTitle || "Título no disponible";
+        $item('#componentDescription').text = itemData.componentDescription || "Descripción no disponible";
+        $item('#componentStats').text = `${itemData.questionCount || 0} Preguntas, ${itemData.timeLimitMinutes || 0} Minutos`;
+
+        let imageUrl = itemData.componentImage;
+        if (!imageUrl || imageUrl.includes("...")) {
+            imageUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/No_image_available.svg/300px-No_image_available.svg.png";
+        }
+        $item('#componentImage').src = imageUrl;
+
+        $item('#textScore').collapse();
+        $item('#textTime').collapse();
+
+        if ($item('#paywallOverlay')) {
+            $item('#paywallOverlay').collapse();
+        }
+
+        // 1. Render Specific Exam Progress
+        const userProgress = progressMap[itemData.examId];
+
+        if (userProgress) {
+            $item('#textScore').text = `${userProgress.TotalScore}/100`;
+
+            const minutes = Math.floor(userProgress.TimeUsedSeconds / 60);
+            const seconds = Math.round(userProgress.TimeUsedSeconds % 60);
+            $item('#textTime').text = `${minutes}m ${seconds}s`;
+
+            $item('#textScore').expand();
+            $item('#textTime').expand();
+        }
+
+        // 2. Evaluate Paywall State
+        const isComponentLocked = completedComponents.has(itemData.componentId) && !isPremiumUser;
+        let finalTargetUrl = "";
+
+        if (isComponentLocked) {
+            if ($item('#paywallOverlay')) {
+                $item('#paywallOverlay').expand();
+            }
+
+            $item('#startExamButton').label = "Desbloquear";
+            finalTargetUrl = PAYWALL_URL;
+        } else {
+            $item('#startExamButton').label = "Empezar " + (itemData.componentTitle || "");
+
+            const uniqueToken = Date.now().toString();
+
+            finalTargetUrl = `/${ROUTE_PREFIX}/${itemData.componentId}` +
+                             `?examId=${encodeURIComponent(itemData.examId || "")}` +
+                             `&title=${encodeURIComponent(itemData.componentTitle || "")}` +
+                             `&qCount=${itemData.questionCount || 0}` +
+                             `&time=${itemData.timeLimitMinutes || 0}` +
+                             `&img=${encodeURIComponent(imageUrl)}` +
+                             `&reset=${uniqueToken}`;
+        }
+
+        // 3. Bind Routing Actions
+        $item('#startExamButton').link = finalTargetUrl;
+        $item('#startExamButton').target = "_self";
+
+        $item('#componentImage').link = finalTargetUrl;
+        $item('#componentImage').target = "_self";
+
+        const box8 = $item('#box8');
+        if (box8 && typeof box8.onClick === 'function') {
+            box8.onClick(() => wixLocationFrontend.to(finalTargetUrl));
+        }
+
+        const paywallOverlay = $item('#paywallOverlay');
+        if (paywallOverlay && typeof paywallOverlay.onClick === 'function') {
+            paywallOverlay.onClick(() => wixLocationFrontend.to(finalTargetUrl));
+        }
+    });
+
+    loadPageSafely();
 });
+
+// Single Responsibility: UI Loading Phase
+function initializePageState() {
+    if ($w('#loadingVisualizer')) {
+        $w('#loadingVisualizer').expand();
+    }
+    if ($w('#animatedText1')) {
+        $w('#animatedText1').expand();
+    }
+    if ($w('#descriptionFlexbox')) {
+        $w('#descriptionFlexbox').collapse();
+    }
+}
+
+// Single Responsibility: UI Content Phase
+function renderContentState() {
+    if ($w('#loadingVisualizer')) {
+        $w('#loadingVisualizer').collapse();
+    }
+    if ($w('#animatedText1')) {
+        $w('#animatedText1').collapse();
+    }
+    if ($w('#descriptionFlexbox')) {
+        $w('#descriptionFlexbox').expand();
+    }
+}
+
+// Single Responsibility: UI Error Phase
+function handleErrorState() {
+    if ($w('#loadingVisualizer')) {
+        $w('#loadingVisualizer').collapse();
+    }
+    if ($w('#animatedText1')) {
+        $w('#animatedText1').collapse();
+    }
+    if ($w('#descriptionFlexbox')) {
+        $w('#descriptionFlexbox').collapse();
+    }
+}
+
+// Single Responsibility: Data Fetching and Assignment
+async function loadPageSafely() {
+    try {
+        const response = await fetch(CDN_CATALOG_URL, { method: 'GET' });
+
+        if (!response.ok) {
+            throw new Error(`CDN Error: ${response.status}`);
+        }
+
+        const responseData = await response.json();
+        globalCatalog = responseData.catalog || [];
+
+        await fetchUserProgressAndStatus();
+
+        const randomizedCatalog = processAndRandomizeCatalog(globalCatalog);
+        $w('#componentRepeater').data = randomizedCatalog;
+
+        renderContentState();
+
+        if ($w('#componentRepeater')) {
+            $w('#componentRepeater').expand();
+        }
+
+    } catch (error) {
+        console.error("Initialization Error:", error);
+        handleErrorState();
+    }
+}
+
+async function fetchUserProgressAndStatus() {
+    try {
+        const member = await currentMember.getMember();
+
+        if (!member || !member._id) {
+            return;
+        }
+
+        try {
+            const ordersList = await orders.listCurrentMemberOrders();
+            if (ordersList && ordersList.length > 0) {
+                const activeOrders = ordersList.filter(order => order.status === 'ACTIVE');
+                isPremiumUser = activeOrders.length > 0;
+            }
+        } catch (planError) {
+            console.error("Plan Check Error:", planError);
+        }
+
+        const progressResponse = await fetchUserProgress(member._id);
+
+        if (progressResponse && progressResponse.ok && progressResponse.progress) {
+            progressResponse.progress.forEach(item => {
+                if (!item.ExamId) return;
+
+                const catalogMatch = globalCatalog.find(ex =>
+                    ex.examId === item.ExamId || String(ex.examId || '').endsWith(`/${item.ExamId}`)
+                );
+
+                if (catalogMatch) {
+                    progressMap[catalogMatch.examId] = item;
+                    completedComponents.add(catalogMatch.componentId);
+                }
+            });
+        }
+    } catch (error) {
+        console.error("Progress Fetch Error:", error);
+    }
+}
+
+function processAndRandomizeCatalog(catalog) {
+    const groupedExams = {};
+
+    catalog.forEach(exam => {
+        const compId = exam.componentId || "unknown";
+        if (!groupedExams[compId]) {
+            groupedExams[compId] = [];
+        }
+        groupedExams[compId].push(exam);
+    });
+
+    const finalSelection = [];
+
+    for (const compId in groupedExams) {
+        const examsArray = groupedExams[compId];
+
+        const randomIndex = Math.floor(Math.random() * examsArray.length);
+        const selectedExam = examsArray[randomIndex];
+
+        const baseId = selectedExam.examId || selectedExam.componentId || "item";
+        const cleanId = String(baseId).replace(/[^a-zA-Z0-9-]/g, '-');
+        const randomHash = Math.random().toString(36).substring(2, 9);
+
+        finalSelection.push({
+            ...selectedExam,
+            _id: `${cleanId}-${randomHash}`
+        });
+    }
+
+    return finalSelection;
+}
