@@ -37,11 +37,11 @@ $w.onReady(function () {
             $item('#paywallOverlay').collapse();
         }
 
-        // 1. Render Specific Exam Progress
+        // 1. Render Specific Exam Progress (Formatted for UNAL scale: 1 decimal place)
         const userProgress = progressMap[itemData.examId];
 
         if (userProgress) {
-            $item('#textScore').text = `${userProgress.TotalScore}/100`;
+            $item('#textScore').text = `${Number(userProgress.TotalScore).toFixed(1)}`;
 
             const minutes = Math.floor(userProgress.TimeUsedSeconds / 60);
             const seconds = Math.round(userProgress.TimeUsedSeconds % 60);
